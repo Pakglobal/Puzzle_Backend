@@ -160,6 +160,7 @@ exports.getAllCollectionsWithScenes = async (req, res, next) => {
                     originalImageUrl: makeUrl(baseUrl, scene.originalImageUrl),
                     finalLottieUrl: makeUrl(baseUrl, scene.finalLottieUrl),
 
+
                     levels: scene.levels.map((lvl, i) => ({
                         levelId: i + 1,
                         imageUrl: makeUrl(baseUrl, lvl.imageUrl)
@@ -173,7 +174,8 @@ exports.getAllCollectionsWithScenes = async (req, res, next) => {
                         width: obj.width,
                         height: obj.height,
                         imageUrl: makeUrl(baseUrl, obj.imageUrl)
-                    }))
+                    })),
+
                 };
             });
 
@@ -183,8 +185,11 @@ exports.getAllCollectionsWithScenes = async (req, res, next) => {
                 description: collection.description,
                 thumbnailUrl: makeUrl(baseUrl, collection.thumbnailUrl),
                 // createdAt: collection.createdAt,
-                scenes: formattedScenes
+                scenes: formattedScenes,
+                sceneCount: scenes.length,
+
             });
+
         }
 
         res.status(200).json({
