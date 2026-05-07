@@ -5,11 +5,6 @@ const jwt = require('jsonwebtoken');
 const authMiddleware = (req, res, next) => {
     const token = req.header('Authorization')?.split(' ')[1];
 
-    if (process.env.DEV_BYPASS === 'true') {
-        req.user = { userId: 'bypass-user', role: 'admin' };
-        return next();
-    }
-
     if (!token) {
         return res.status(401).json({
             success: false,
