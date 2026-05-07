@@ -21,7 +21,7 @@ connectDB();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",")
+  ? process.env.ALLOWED_ORIGINS.split(",").map(o => o.trim())
   : ["http://localhost:5173"];
 
 app.use(
@@ -29,9 +29,12 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1) {
+      
+      const isAllowed = allowedOrigins.includes(origin);
+      if (isAllowed) {
         callback(null, true);
       } else {
+        console.log(`CORS blocked for origin: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
     },
