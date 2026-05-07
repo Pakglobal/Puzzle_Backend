@@ -1,13 +1,16 @@
-
 require("dotenv").config();
 const express = require("express");
-const connectDB = require("./config/db");
+const cors = require("cors");
 
+const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const sceneRoutes = require("./routes/sceneRoutes");
 const collectionRoutes = require("./routes/collectionRoutes");
+const adminCdnRoutes = require("./routes/admin/cdn.route");
+const adminDashboardRoutes = require("./routes/admin/dashboard.route");
+const notificationRoutes = require("./routes/notification-routes");
+const initCronJobs = require("./services/cronService");
 
-const cors = require("cors");
 const PORT = process.env.PORT || 3000;
 const HOST = "0.0.0.0";
 
@@ -16,39 +19,44 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// Middleware
-app.use(cors({ origin: '*' }));
-app.use(express.json());
+// ─── Middleware ───────────────────────────────────────────────────────────────
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+})); app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
 app.use(
-    "/uploads",
-    express.static("uploads", {
-        setHeaders: (res) => {
-            res.set("Cache-Control", "no-store");
-        },
-    })
+  "/uploads",
+  express.static("uploads", {
+    setHeaders: (res) => {
+      res.set("Cache-Control", "no-store");
+    },
+  })
 );
 
-// Routes
-
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 app.use("/api/scenes", sceneRoutes);
 app.use("/api/collections", collectionRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/admin", adminCdnRoutes);
+app.use("/admin/dashboard", adminDashboardRoutes);
 
+// Initialize Cron Jobs for automated notifications
+initCronJobs();
 
+// ─── Global error handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
-    console.error(err);
-
-    const status = err.status || 500;
-    const message = err.message || "Something went wrong";
-
-    res.status(status).json({ success: false, message });
+  console.error(err);
+  const status = err.status || 500;
+  const message = err.message || "Something went wrong";
+  res.status(status).json({ success: false, message });
 });
 
-
 app.listen(PORT, HOST, () => {
-    console.log(`Server running on port: ${PORT}`);
+  console.log(`Server running on port: ${PORT}`);
 });
 
 module.exports = app;
-

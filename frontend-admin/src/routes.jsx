@@ -1,12 +1,10 @@
 import {
   HomeIcon,
-  UserCircleIcon,
   PuzzlePieceIcon,
-  ServerStackIcon,
-  RectangleStackIcon,
+  FolderIcon,
+  BellIcon,
 } from "@heroicons/react/24/solid";
-import { Home, Profile, Scenes } from "@/pages/dashboard";
-import { SignIn, SignUp } from "@/pages/auth";
+import { Home, Scenes, Collections, Notifications } from "@/pages/dashboard";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -23,34 +21,22 @@ export const routes = [
         element: <Home />,
       },
       {
+        icon: <FolderIcon {...icon} />,
+        name: "collections",
+        path: "/collections",
+        element: <Collections />,
+      },
+      {
         icon: <PuzzlePieceIcon {...icon} />,
         name: "scenes",
         path: "/scenes",
         element: <Scenes />,
       },
       {
-        icon: <UserCircleIcon {...icon} />,
-        name: "profile",
-        path: "/profile",
-        element: <Profile />,
-      },
-    ],
-  },
-  {
-    title: "auth pages",
-    layout: "auth",
-    pages: [
-      {
-        icon: <ServerStackIcon {...icon} />,
-        name: "sign in",
-        path: "/sign-in",
-        element: <SignIn />,
-      },
-      {
-        icon: <RectangleStackIcon {...icon} />,
-        name: "sign up",
-        path: "/sign-up",
-        element: <SignUp />,
+        icon: <BellIcon {...icon} />,
+        name: "notifications",
+        path: "/notifications",
+        element: <Notifications />,
       },
     ],
   },

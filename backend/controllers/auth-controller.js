@@ -103,3 +103,22 @@ exports.login = async (req, res) => {
     }
 };
 
+exports.updateFcmToken = async (req, res) => {
+    const { fcmToken } = req.body;
+    const { userId } = req.user;
+
+    try {
+        await User.findByIdAndUpdate(userId, { fcmToken });
+        res.status(200).json({
+            success: true,
+            message: 'FCM token updated successfully'
+        });
+    } catch (error) {
+        console.error('Update FCM token error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'An unexpected server error occurred.'
+        });
+    }
+};
+

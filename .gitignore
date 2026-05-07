@@ -7,4 +7,5 @@ backend/.env
 frontend-admin/node_modules
 frontend-admin/.env
 frontend-admin/dist
-frontend-admin/build
+frontend-admin/buildbackend/logs/
+backend/*.log

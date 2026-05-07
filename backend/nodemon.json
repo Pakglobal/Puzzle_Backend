@@ -1,0 +1,14 @@
+{
+  "ignore": [
+    "node_modules/**",
+    "uploads/**",
+    "tmp/**",
+    "*.log",
+    "brain/**",
+    ".gemini/**",
+    "*.json",
+    "!package.json"
+  ],
+  "watch": ["."],
+  "ext": "js,mjs,cjs"
+}

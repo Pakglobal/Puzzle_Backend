@@ -5,7 +5,7 @@ import {
 } from "@/widgets/layout";
 import routes from "@/routes";
 import { useMaterialTailwindController } from "@/context";
-import { CreateScene } from "@/pages/dashboard";
+import { CreateScene, CreateCollection, EditScene, EditCollection } from "@/pages/dashboard";
 
 export function Dashboard() {
   const [controller] = useMaterialTailwindController();
@@ -31,8 +31,11 @@ export function Dashboard() {
           )}
           {/* Hidden routes (not in sidebar) */}
           <Route path="/create-scene" element={<CreateScene />} />
+          <Route path="/create-collection" element={<CreateCollection />} />
+          <Route path="/edit-scene/:id" element={<EditScene />} />
+          <Route path="/edit-collection/:id" element={<EditCollection />} />
         </Routes>
-        
+
       </div>
     </div>
   );

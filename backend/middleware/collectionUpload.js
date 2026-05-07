@@ -1,59 +1,12 @@
-const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
+const multer = require("multer");
+const { uploadToR2, buildKey } = require("../services/r2");
 
-// ================= STORAGE =================
+// ─── Memory storage ──────────────────────────────────────────────────────────
+const storage = multer.memoryStorage();
 
-const storage = multer.diskStorage({
-
-    destination: function (req, file, cb) {
-
-        const micro = process.hrtime.bigint()
-            .toString()
-            .slice(-4);
-
-        const folderName = micro;
-
-        const uploadPath = path.join(
-            __dirname,
-            "..",
-            "uploads",
-            "collection",
-            folderName
-        );
-
-        // Create folder if not exists
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-        }
-
-        cb(null, uploadPath);
-    },
-
-
-    filename: function (req, file, cb) {
-
-        const ext = path.extname(file.originalname).toLowerCase();
-
-        const baseName = path
-            .basename(file.originalname, ext)
-            .replace(/[^a-zA-Z0-9]/g, "_")
-            .slice(0, 20);
-
-        const shortId = Date.now().toString().slice(-4)
-
-        const fileName = `${shortId}-${baseName}${ext}`;
-
-        cb(null, fileName);
-    }
-});
-
-
-
-// ================= FILE FILTER =================
-
+// ─── File filter ─────────────────────────────────────────────────────────────
 const fileFilter = (req, file, cb) => {
-
     if (
         file.mimetype.startsWith("image/") ||
         file.mimetype.startsWith("video/") ||
@@ -61,17 +14,41 @@ const fileFilter = (req, file, cb) => {
     ) {
         cb(null, true);
     } else {
-        cb(new Error("Only image/gif/video/audio allowed"));
+        cb(new Error("Only image / video / audio files are allowed."));
     }
 };
 
-
-// ================= EXPORT =================
-
-module.exports = multer({
+// ─── Multer instance ──────────────────────────────────────────────────────────
+const multerUpload = multer({
     storage,
     fileFilter,
-    limits: {
-        fileSize: 300 * 1024 * 1024 // 300MB
-    }
+    limits: { fileSize: 300 * 1024 * 1024 }, // 300 MB
 });
+
+// ─── R2 upload middleware ─────────────────────────────────────────────────────
+const uploadToR2Middleware = async (req, res, next) => {
+    try {
+        const file = req.file; // single upload
+        if (!file) return next();
+
+        const folder = `collection/${Date.now().toString().slice(-6)}`;
+        const key = buildKey(folder, file.originalname);
+
+        file.r2Url = await uploadToR2(file.buffer, key, file.mimetype);
+        file.r2Key = key;
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
+// ─── Export object with .single() compatible with existing route ─────────────
+const upload = {
+    single: (fieldName) => [
+        multerUpload.single(fieldName),
+        uploadToR2Middleware,
+    ],
+};
+
+module.exports = upload;

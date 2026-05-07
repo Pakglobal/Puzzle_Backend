@@ -1,71 +1,9 @@
-const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
 const Scene = require("../models/sceneModel");
+const { uploadToR2, buildKey, getShortTs } = require("../services/r2");
 
-const baseUploadDir = path.join(__dirname, "..", "uploads");
-
-const createDirIfNotExist = (dir) => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-};
-
-const getShortTs = () => Date.now().toString().slice(-6);
-
-const storage = multer.diskStorage({
-
-    destination: async (req, file, cb) => {
-        try {
-            //  Agar pehle file ne folder bana diya, reuse karo
-            if (req.storyFolder) {
-                const finalPath = path.join(baseUploadDir, req.storyFolder);
-                return cb(null, finalPath);
-            }
-
-            let storyFolder;
-
-            //  UPDATE case — purana folder use karo
-            if (req.params?.sceneId) {
-                const scene = await Scene.findById(req.params.sceneId).lean();
-
-                if (scene?.originalImageUrl) {
-                    const parts = scene.originalImageUrl.split("/");
-                    storyFolder = parts[2];
-                }
-            }
-
-            //  CREATE case — ek baar folder banao
-            if (!storyFolder) {
-                storyFolder = `${getShortTs()}_story`;
-            }
-
-            const finalPath = path.join(baseUploadDir, storyFolder);
-            createDirIfNotExist(finalPath);
-
-            //  MOST IMPORTANT LINE
-            req.storyFolder = storyFolder;
-
-            cb(null, finalPath);
-
-        } catch (err) {
-            cb(err);
-        }
-    },
-
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-
-        const baseName = path
-            .basename(file.originalname, ext)
-            .replace(/[^a-zA-Z0-9-_]/g, "_");
-
-        const shortTs = getShortTs();
-
-        cb(null, `${shortTs}-${baseName}${ext}`);
-    }
-
-});
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
     const allowedMimeTypes = [
@@ -79,27 +17,137 @@ const fileFilter = (req, file, cb) => {
         "video/mp4",
         "video/quicktime",
         "video/x-matroska",
-        "application/octet-stream"
+        "application/octet-stream",
     ];
 
-    const allowedExtensions = [".gif", ".mp4", ".mov", ".mkv"];
-
+    const allowedExtensions = [".gif", ".mp4", ".mov", ".mkv", ".json"];
     const ext = path.extname(file.originalname).toLowerCase();
 
-    if (
-        allowedMimeTypes.includes(file.mimetype) ||
-        allowedExtensions.includes(ext)
-    ) {
+    if (allowedMimeTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
         cb(null, true);
     } else {
-        cb(new Error("Only image, gif, and video files are allowed."));
+        cb(new Error("Only image, gif, video and lottie files are allowed."));
     }
 };
 
-
-
-module.exports = multer({
+// ─── Multer instance (memory, no disk write) ─────────────────────────────────
+const multerUpload = multer({
     storage,
     fileFilter,
     limits: { fileSize: 300 * 1024 * 1024 },
 });
+
+
+const uploadToR2Middleware = async (req, res, next) => {
+    try {
+        if (!req.files || Object.keys(req.files).length === 0) return next();
+
+        let storyFolder = req.storyFolder;
+
+        if (!storyFolder) {
+            if (req.params?.sceneId) {
+                const scene = await Scene.findById(req.params.sceneId)
+                    .select("originalImageUrl")
+                    .lean();
+
+                if (scene?.originalImageUrl) {
+
+                    const parts = scene.originalImageUrl.split("/");
+                    const isR2 = scene.originalImageUrl.startsWith("http");
+                    storyFolder = isR2 ? parts[parts.length - 2] : parts[2];
+                }
+            }
+
+            if (!storyFolder) {
+                storyFolder = `${getShortTs()}_story`;
+            }
+
+            req.storyFolder = storyFolder;
+        }
+
+        // ─── Phase 1: Identify and Prepare ──────────────────────────────────
+        const criticalTasks = [];
+        const backgroundTasks = [];
+        const bufferToResult = new Map();
+
+        const getBufId = (buf) => `${buf.length}-${buf.slice(0, 100).toString("hex")}`;
+
+        for (const [fieldName, filesArr] of Object.entries(req.files)) {
+            const isBackgroundGroup = fieldName === "objectImages";
+
+            for (const file of filesArr) {
+                const bufId = getBufId(file.buffer);
+
+                if (bufferToResult.has(bufId)) {
+                    console.log(`[R2 MIDDLEWARE] Reusing result for duplicate: ${file.originalname}`);
+                    const reusePromise = bufferToResult.get(bufId).then(res => {
+                        file.r2Url = res.url;
+                        file.r2Key = res.key;
+                    });
+                    if (isBackgroundGroup) backgroundTasks.push(reusePromise);
+                    else criticalTasks.push(reusePromise);
+                    continue;
+                }
+
+                const key = buildKey(storyFolder, file.originalname);
+                
+                // PREDICTIVE URL GENERATION
+                // We calculate the URL before uploading so the DB can save it immediately.
+                const publicBase = (process.env.CLOUDFLARE_R2_PUBLIC_URL || "").replace(/\/$/, "");
+                file.r2Url = `${publicBase}/${key}`;
+                file.r2Key = key;
+
+                console.log(`[R2 MIDDLEWARE] [${isBackgroundGroup ? 'BG' : 'SYNC'}] ${fieldName}: ${file.originalname}`);
+
+                const task = uploadToR2(file.buffer, key, file.mimetype).then(url => ({
+                    url,
+                    key
+                }));
+
+                bufferToResult.set(bufId, task);
+
+                if (isBackgroundGroup) {
+                    backgroundTasks.push(task.catch(e => console.error(`[R2 BG ERROR] "${key}":`, e.message)));
+                } else {
+                    criticalTasks.push(task);
+                }
+            }
+        }
+
+        // ─── Phase 2: Await only Critical Assets ─────────────────────────────
+        // This makes the API return in seconds instead of minutes.
+        if (criticalTasks.length > 0) {
+            console.log(`[R2 MIDDLEWARE] Awaiting ${criticalTasks.length} critical assets...`);
+            await Promise.all(criticalTasks);
+        }
+
+        // ─── Phase 3: Background the rest ────────────────────────────────────
+        if (backgroundTasks.length > 0) {
+            console.log(`[R2 MIDDLEWARE] Kicking off ${backgroundTasks.length} background assets...`);
+            // We do NOT await this. It runs in the parallel while 'next()' proceeds.
+            Promise.all(backgroundTasks).then(() => {
+                console.log(`[R2 MIDDLEWARE] All ${backgroundTasks.length} background assets uploaded.`);
+            }).catch(err => {
+                console.error("[R2 MIDDLEWARE] Critical failure in background batch:", err.message);
+            });
+        }
+        
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
+
+const upload = {
+    fields: (fieldSpec) => [
+        multerUpload.fields(fieldSpec),
+        uploadToR2Middleware,
+    ],
+    single: (fieldName) => [
+        multerUpload.single(fieldName),
+        uploadToR2Middleware,
+    ],
+};
+
+module.exports = upload;

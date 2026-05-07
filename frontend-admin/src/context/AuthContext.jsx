@@ -13,9 +13,17 @@ function decodeToken(token) {
     }
 }
 
+const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === 'true';
+const MOCK_TOKEN = 'bypass-token';
+const MOCK_USER = { userId: 'bypass-user', role: 'admin' };
+
 export function AuthProvider({ children }) {
-    const [token, setToken] = useState(() => localStorage.getItem('token'));
+    const [token, setToken] = useState(() => {
+        if (DEV_BYPASS) return MOCK_TOKEN;
+        return localStorage.getItem('token');
+    });
     const [user, setUser] = useState(() => {
+        if (DEV_BYPASS) return MOCK_USER;
         const stored = localStorage.getItem('user');
         return stored ? JSON.parse(stored) : null;
     });

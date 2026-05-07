@@ -21,9 +21,11 @@ import {
     CubeIcon,
     XMarkIcon,
     PlusIcon,
+    PencilSquareIcon,
+    TrashIcon,
 } from "@heroicons/react/24/solid";
 import { useNavigate } from "react-router-dom";
-import { getAllScenes } from "@/services/sceneService";
+import { getAllScenes, deleteScene } from "@/services/sceneService";
 import toast from "react-hot-toast";
 
 export function Scenes() {
@@ -32,6 +34,9 @@ export function Scenes() {
     const [loading, setLoading] = useState(true);
     const [selectedScene, setSelectedScene] = useState(null);
     const [detailOpen, setDetailOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [sceneToDelete, setSceneToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchScenes = async () => {
         setLoading(true);
@@ -63,6 +68,35 @@ export function Scenes() {
     const closeDetail = () => {
         setDetailOpen(false);
         setSelectedScene(null);
+    };
+
+    const openDeleteDialog = (scene) => {
+        setSceneToDelete(scene);
+        setDeleteDialogOpen(true);
+    };
+
+    const closeDeleteDialog = () => {
+        setDeleteDialogOpen(false);
+        setSceneToDelete(null);
+    };
+
+    const handleDelete = async () => {
+        if (!sceneToDelete) return;
+        setIsDeleting(true);
+        try {
+            const result = await deleteScene(sceneToDelete.id);
+            if (result.success) {
+                toast.success(result.message || "Scene deleted successfully");
+                fetchScenes();
+                closeDeleteDialog();
+            } else {
+                toast.error(result.message || "Failed to delete scene");
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Error deleting scene");
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     return (
@@ -222,15 +256,35 @@ export function Scenes() {
 
                                             {/* Actions */}
                                             <td className={className}>
-                                                <Tooltip content="View Details">
-                                                    <IconButton
-                                                        variant="text"
-                                                        color="light-blue"
-                                                        onClick={() => openDetail(scene)}
-                                                    >
-                                                        <EyeIcon className="h-5 w-5" />
-                                                    </IconButton>
-                                                </Tooltip>
+                                                <div className="flex items-center gap-1">
+                                                    <Tooltip content="View Details">
+                                                        <IconButton
+                                                            variant="text"
+                                                            color="light-blue"
+                                                            onClick={() => openDetail(scene)}
+                                                        >
+                                                            <EyeIcon className="h-5 w-5" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip content="Edit Scene">
+                                                        <IconButton
+                                                            variant="text"
+                                                            color="orange"
+                                                            onClick={() => navigate(`/dashboard/edit-scene/${scene.id}`)}
+                                                        >
+                                                            <PencilSquareIcon className="h-5 w-5" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip content="Delete Scene">
+                                                        <IconButton
+                                                            variant="text"
+                                                            color="red"
+                                                            onClick={() => openDeleteDialog(scene)}
+                                                        >
+                                                            <TrashIcon className="h-5 w-5" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -240,6 +294,17 @@ export function Scenes() {
                     )}
                 </CardBody>
             </Card>
+
+            <div className="flex justify-center -mt-6">
+                <Button
+                    color="light-blue"
+                    className="flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+                    onClick={() => navigate("/dashboard/create-scene")}
+                >
+                    <PlusIcon className="h-5 w-5" />
+                    Create Scene
+                </Button>
+            </div>
 
             {/* SCENE DETAIL DIALOG */}
             <Dialog
@@ -439,6 +504,41 @@ export function Scenes() {
                         </DialogFooter>
                     </>
                 )}
+            </Dialog>
+
+            {/* DELETE CONFIRMATION DIALOG */}
+            <Dialog open={deleteDialogOpen} handler={closeDeleteDialog} size="xs">
+                <DialogHeader className="flex flex-col items-center gap-3 pt-8">
+                    <div className="grid h-16 w-16 place-items-center rounded-full bg-red-50">
+                        <TrashIcon className="h-8 w-8 text-red-500" />
+                    </div>
+                    <Typography variant="h5" color="blue-gray">
+                        Are you sure?
+                    </Typography>
+                </DialogHeader>
+                <DialogBody className="text-center font-normal text-blue-gray-500">
+                    You are about to delete <span className="font-bold text-blue-gray-700">{sceneToDelete?.sceneName}</span>.
+                    This action cannot be undone and all associated assets will be permanently removed.
+                </DialogBody>
+                <DialogFooter className="flex items-center justify-center gap-3 pb-8">
+                    <Button
+                        variant="text"
+                        color="blue-gray"
+                        onClick={closeDeleteDialog}
+                        disabled={isDeleting}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="gradient"
+                        color="red"
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="flex items-center gap-2"
+                    >
+                        {isDeleting ? <Spinner className="h-4 w-4" /> : "Delete Scene"}
+                    </Button>
+                </DialogFooter>
             </Dialog>
         </div>
     );

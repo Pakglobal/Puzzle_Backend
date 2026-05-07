@@ -11,6 +11,7 @@ import {
     Chip,
     Select,
     Option,
+    Spinner,
 } from "@material-tailwind/react";
 import {
     PlusIcon,
@@ -19,15 +20,19 @@ import {
     ArrowUpTrayIcon,
     PuzzlePieceIcon,
     CubeIcon,
+    PencilSquareIcon,
+    ArrowLeftIcon,
 } from "@heroicons/react/24/solid";
-import { useNavigate } from "react-router-dom";
-import { createScene } from "@/services/sceneService";
+import { useNavigate, useParams } from "react-router-dom";
+import { createScene, getSceneById, updateScene } from "@/services/sceneService";
 import { getAllCollections } from "@/services/collectionService";
 import toast from "react-hot-toast";
 
-export function CreateScene() {
+export function EditScene() {
     const navigate = useNavigate();
+    const { id: sceneId } = useParams();
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(true);
     const [collections, setCollections] = useState([]);
     const [fetchingCollections, setFetchingCollections] = useState(true);
 
@@ -37,9 +42,28 @@ export function CreateScene() {
     const [height, setHeight] = useState("");
     const [width, setWidth] = useState("");
 
+    // ── Pre-existing URLs (for display) ──
+    const [existingUrls, setExistingUrls] = useState({
+        originalImage: "",
+        previewImage: "",
+        finalLottie: "",
+    });
+
+    // ── Main Files ──
+    const [originalImage, setOriginalImage] = useState(null);
+    const [previewImage, setPreviewImage] = useState(null);
+    const [finalLottie, setFinalLottie] = useState(null);
+
+    // ── Levels ──
+    const [levels, setLevels] = useState([]);
+
+    // ── Objects ──
+    const [objects, setObjects] = useState([]);
+
     useEffect(() => {
         fetchCollections();
-    }, []);
+        fetchSceneData();
+    }, [sceneId]);
 
     const fetchCollections = async () => {
         try {
@@ -57,21 +81,67 @@ export function CreateScene() {
         }
     };
 
-    // ── Main Files ──
-    const [originalImage, setOriginalImage] = useState(null);
-    const [previewImage, setPreviewImage] = useState(null);
-    const [finalLottie, setFinalLottie] = useState(null);
+    const fetchSceneData = async () => {
+        if (!sceneId) return;
+        setFetching(true);
+        try {
+            const result = await getSceneById(sceneId);
+            if (result.success) {
+                const s = result.scene;
+                setCollectionId(s.collectionId || "");
+                setSceneName(s.sceneName || "");
+                setHeight(s.height || "");
+                setWidth(s.width || "");
 
-    // ── Levels ──
-    const [levels, setLevels] = useState([{ image: null }]);
+                setExistingUrls({
+                    originalImage: s.originalImageUrl,
+                    previewImage: s.previewUrl,
+                    finalLottie: s.finalLottieUrl,
+                });
 
-    // ── Objects ──
-    const [objects, setObjects] = useState([
-        { levelId: "1", x: "", y: "", width: "", height: "", image: null },
-    ]);
+                // Set levels - backend levelId is mongoId, frontend uses it to track
+                setLevels((s.levels || []).map(l => ({
+                    levelId: l.id, // Actual Mongo ID
+                    displayId: l.levelId, // 1, 2, 3...
+                    imageUrl: l.imageUrl,
+                    image: null
+                })));
+
+                // Map numerical levelId from response to actual Mongo ID
+                const levelIdMapFromResponse = {};
+                (s.levels || []).forEach(l => {
+                    levelIdMapFromResponse[l.levelId] = l.id;
+                });
+
+                // Set objects
+                setObjects((s.objects || []).map(o => ({
+                    id: o.id,
+                    levelId: levelIdMapFromResponse[o.levelId] || o.levelId,
+                    x: o.x || 0,
+                    y: o.y || 0,
+                    width: o.width || 0,
+                    height: o.height || 0,
+                    imageUrl: o.imageUrl,
+                    image: null
+                })));
+            } else {
+                toast.error(result.message || "Failed to fetch scene data");
+                navigate("/dashboard/scenes");
+            }
+        } catch (error) {
+            console.error("Error fetching scene:", error);
+            toast.error("Error fetching scene data");
+            navigate("/dashboard/scenes");
+        } finally {
+            setFetching(false);
+        }
+    };
 
     // ─── LEVEL HELPERS ───
-    const addLevel = () => setLevels([...levels, { image: null }]);
+    const addLevel = () => {
+        const nextId = levels.length > 0 ? Math.max(...levels.map(l => l.displayId)) + 1 : 1;
+        setLevels([...levels, { levelId: `temp_${Date.now()}`, displayId: nextId, image: null, imageUrl: "" }]);
+    };
 
     const removeLevel = (index) => {
         if (levels.length <= 1) return toast.error("At least 1 level is required");
@@ -88,7 +158,7 @@ export function CreateScene() {
     const addObject = () =>
         setObjects([
             ...objects,
-            { levelId: "1", x: "", y: "", width: "", height: "", image: null },
+            { levelId: (levels[0]?.levelId || ""), x: "", y: "", width: "", height: "", image: null, imageUrl: "" },
         ]);
 
     const removeObject = (index) => {
@@ -113,7 +183,6 @@ export function CreateScene() {
         e.preventDefault();
 
         // Validation
-        if (!collectionId.trim()) return toast.error("Collection ID is required");
         if (!sceneName.trim()) return toast.error("Scene name is required");
         if (!height || !width) return toast.error("Height and width are required");
 
@@ -125,12 +194,14 @@ export function CreateScene() {
                 sceneName: sceneName.trim(),
                 height: parseInt(height),
                 width: parseInt(width),
-                levels: levels.map((lvl, idx) => ({
-                    levelId: (idx + 1).toString(),
+                levels: levels.map((lvl) => ({
+                    levelId: lvl.levelId ? lvl.levelId.toString() : "",
+                    displayId: lvl.displayId,
                     hasNewImage: !!lvl.image
-                })), 
+                })),
                 objects: objects.map((obj) => ({
-                    levelId: obj.levelId.toString(),
+                    id: obj.id,
+                    levelId: obj.levelId,
                     x: parseFloat(obj.x),
                     y: parseFloat(obj.y),
                     width: parseFloat(obj.width),
@@ -143,40 +214,58 @@ export function CreateScene() {
             const formData = new FormData();
             formData.append("sceneData", JSON.stringify(sceneData));
 
-            // Main files
+            // Main files (only append if new file selected)
             if (originalImage) formData.append("originalImage", originalImage);
             if (previewImage) formData.append("previewImage", previewImage);
             if (finalLottie) formData.append("finalLottie", finalLottie);
 
-            // Level images
+            // Level images (backend expects specific indexing)
             levels.forEach((lvl) => {
                 if (lvl.image) formData.append("levelImages", lvl.image);
             });
-
+ 
             // Object images
             objects.forEach((obj) => {
                 if (obj.image) formData.append("objectImages", obj.image);
             });
 
-            const result = await createScene(collectionId.trim(), formData);
+            const result = await updateScene(sceneId, formData);
 
             if (result.success) {
-                toast.success(result.message || "Scene created successfully!");
+                toast.success(result.message || "Scene updated successfully!");
                 navigate("/dashboard/scenes");
             } else {
-                toast.error(result.message || "Failed to create scene");
+                toast.error(result.message || "Failed to update scene");
             }
         } catch (error) {
             toast.error(
-                error.response?.data?.message || "Failed to create scene"
+                error.response?.data?.message || "Failed to update scene"
             );
         } finally {
             setLoading(false);
         }
     };
 
+    if (fetching) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <Spinner color="light-blue" className="h-12 w-12" />
+                <Typography className="ml-4 font-semibold text-blue-gray-400">Loading Scene Data...</Typography>
+            </div>
+        );
+    }
+
     return (
         <div className="mt-12 mb-8">
+            <div className="flex items-center gap-4 mb-6">
+                <IconButton variant="text" color="blue-gray" onClick={() => navigate("/dashboard/scenes")}>
+                    <ArrowLeftIcon className="h-5 w-5" />
+                </IconButton>
+                <Typography variant="h4" color="blue-gray">
+                    Edit Scene
+                </Typography>
+            </div>
+
             <form onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-8">
 
@@ -187,9 +276,9 @@ export function CreateScene() {
                             color="light-blue"
                             className="p-5 flex items-center gap-3"
                         >
-                            <PuzzlePieceIcon className="h-6 w-6 text-white" />
+                            <PencilSquareIcon className="h-6 w-6 text-white" />
                             <Typography variant="h6" color="white">
-                                Scene Details
+                                Edit Scene Details
                             </Typography>
                         </CardHeader>
                         <CardBody className="flex flex-col gap-5">
@@ -198,8 +287,9 @@ export function CreateScene() {
                                     label="Select Collection"
                                     value={collectionId}
                                     onChange={(val) => setCollectionId(val)}
+                                    required
                                     color="light-blue"
-                                    disabled={fetchingCollections}
+                                    disabled={true} // Usually don't allow changing collection on edit
                                 >
                                     {collections.map((col) => (
                                         <Option key={col.id} value={col.id}>
@@ -254,6 +344,7 @@ export function CreateScene() {
                                 <FileUploadCard
                                     label="Original Image"
                                     file={originalImage}
+                                    existingUrl={existingUrls.originalImage}
                                     onFileChange={setOriginalImage}
                                     accept="image/*"
                                 />
@@ -261,6 +352,7 @@ export function CreateScene() {
                                 <FileUploadCard
                                     label="Preview Image"
                                     file={previewImage}
+                                    existingUrl={existingUrls.previewImage}
                                     onFileChange={setPreviewImage}
                                     accept="image/*"
                                 />
@@ -268,6 +360,7 @@ export function CreateScene() {
                                 <FileUploadCard
                                     label="Final Lottie / GIF"
                                     file={finalLottie}
+                                    existingUrl={existingUrls.finalLottie}
                                     onFileChange={setFinalLottie}
                                     accept="image/*,.gif,.json"
                                 />
@@ -309,12 +402,12 @@ export function CreateScene() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {levels.map((lvl, i) => (
                                     <div
-                                        key={i}
+                                        key={lvl.levelId}
                                         className="relative rounded-lg border border-blue-gray-100 p-4"
                                     >
                                         <div className="flex items-center justify-between mb-3">
                                             <Chip
-                                                value={`Level ${i + 1}`}
+                                                value={`Level ${lvl.displayId}`}
                                                 variant="ghost"
                                                 color="light-blue"
                                                 className="text-xs"
@@ -332,8 +425,9 @@ export function CreateScene() {
                                             </Tooltip>
                                         </div>
                                         <FileUploadCard
-                                            label={`Level ${i + 1} Image`}
+                                            label={`Level ${lvl.displayId} Image`}
                                             file={lvl.image}
+                                            existingUrl={lvl.imageUrl}
                                             onFileChange={(file) => setLevelImage(i, file)}
                                             accept="image/*"
                                             compact
@@ -349,24 +443,36 @@ export function CreateScene() {
                         <CardHeader
                             variant="gradient"
                             color="light-blue"
-                            className="p-5 flex items-center gap-3"
+                            className="p-5 flex items-center justify-between"
                         >
-                            <PuzzlePieceIcon className="h-6 w-6 text-white" />
-                            <Typography variant="h6" color="white">
-                                Objects
-                            </Typography>
-                            <Chip
-                                value={objects.length}
-                                variant="ghost"
+                            <div className="flex items-center gap-3">
+                                <PuzzlePieceIcon className="h-6 w-6 text-white" />
+                                <Typography variant="h6" color="white">
+                                    Objects
+                                </Typography>
+                                <Chip
+                                    value={objects.length}
+                                    variant="ghost"
+                                    color="white"
+                                    className="text-white border-white/30"
+                                />
+                            </div>
+                            <Button
+                                size="sm"
                                 color="white"
-                                className="text-white border-white/30"
-                            />
+                                variant="text"
+                                className="flex items-center gap-1"
+                                onClick={addObject}
+                                type="button"
+                            >
+                                <PlusIcon className="h-4 w-4" /> Add Object
+                            </Button>
                         </CardHeader>
                         <CardBody>
                             <div className="flex flex-col gap-4">
                                 {objects.map((obj, i) => (
                                     <div
-                                        key={i}
+                                        key={obj.id || i}
                                         className="rounded-lg border border-blue-gray-100 p-4"
                                     >
                                         <div className="flex items-center justify-between mb-3">
@@ -391,13 +497,13 @@ export function CreateScene() {
                                         <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                                             <Select
                                                 label="Level"
-                                                value={obj.levelId.toString()}
+                                                value={obj.levelId ? obj.levelId.toString() : ""}
                                                 onChange={(val) => updateObject(i, "levelId", val)}
                                                 color="light-blue"
                                             >
-                                                {levels.map((_, idx) => (
-                                                    <Option key={idx} value={(idx + 1).toString()}>
-                                                        Level {idx + 1}
+                                                {levels.map(l => (
+                                                    <Option key={l.levelId} value={l.levelId.toString()}>
+                                                        Level {l.displayId}
                                                     </Option>
                                                 ))}
                                             </Select>
@@ -448,6 +554,8 @@ export function CreateScene() {
                                                         <span className="truncate max-w-[60px]">
                                                             {obj.image.name}
                                                         </span>
+                                                    ) : obj.imageUrl ? (
+                                                        <span className="text-light-blue-500 font-medium">Re-upload</span>
                                                     ) : (
                                                         "Image"
                                                     )}
@@ -462,6 +570,11 @@ export function CreateScene() {
                                                 </label>
                                             </div>
                                         </div>
+                                        {obj.imageUrl && !obj.image && (
+                                            <div className="mt-2 flex justify-center">
+                                                <img src={obj.imageUrl} alt="object" className="h-10 object-contain opacity-50" />
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -496,11 +609,11 @@ export function CreateScene() {
                             disabled={loading}
                         >
                             {loading ? (
-                                "Creating..."
+                                "Updating..."
                             ) : (
                                 <>
-                                    <PlusIcon className="h-4 w-4" />
-                                    Create Scene
+                                    <PencilSquareIcon className="h-4 w-4" />
+                                    Update Scene
                                 </>
                             )}
                         </Button>
@@ -514,7 +627,7 @@ export function CreateScene() {
 /* ═══════════════════════════════════════════
    REUSABLE FILE UPLOAD CARD
    ═══════════════════════════════════════════ */
-function FileUploadCard({ label, file, onFileChange, accept, compact }) {
+function FileUploadCard({ label, file, existingUrl, onFileChange, accept, compact }) {
     const preview =
         file && file.type?.startsWith("image/")
             ? URL.createObjectURL(file)
@@ -548,6 +661,17 @@ function FileUploadCard({ label, file, onFileChange, accept, compact }) {
                                 {file.name}
                             </Typography>
                         </div>
+                    ) : existingUrl ? (
+                        <div className="relative h-full w-full">
+                            <img
+                                src={existingUrl}
+                                alt={label}
+                                className="h-full w-full object-contain p-1 opacity-60 grayscale-[50%]"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <ArrowUpTrayIcon className="h-6 w-6 text-light-blue-600" />
+                            </div>
+                        </div>
                     ) : (
                         <div className="text-center px-2">
                             <ArrowUpTrayIcon className="mx-auto h-6 w-6 text-blue-gray-300 group-hover:text-light-blue-400 transition-colors" />
@@ -564,23 +688,28 @@ function FileUploadCard({ label, file, onFileChange, accept, compact }) {
                     onChange={(e) => onFileChange(e.target.files[0] || null)}
                 />
             </label>
-            {file && (
+            {(file || existingUrl) && (
                 <Button
                     size="sm"
                     variant="text"
-                    color="red"
+                    color={file ? "red" : "blue-gray"}
                     className="mt-1 text-xs px-2 py-1"
                     onClick={(e) => {
                         e.preventDefault();
-                        onFileChange(null);
+                        if (file) {
+                            onFileChange(null);
+                        } else {
+                            // User clicked remove on an existing URL - maybe just trigger upload or show help
+                            toast.success("Select a new file to replace the existing one");
+                        }
                     }}
                     type="button"
                 >
-                    Remove
+                    {file ? "Remove" : "Replace"}
                 </Button>
             )}
         </div>
     );
 }
 
-export default CreateScene;
+export default EditScene;

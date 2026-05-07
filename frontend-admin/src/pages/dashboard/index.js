@@ -2,3 +2,8 @@ export * from "@/pages/dashboard/home";
 export * from "@/pages/dashboard/profile";
 export * from "@/pages/dashboard/scenes";
 export * from "@/pages/dashboard/create-scene";
+export * from "@/pages/dashboard/edit-scene";
+export * from "@/pages/dashboard/collections";
+export * from "@/pages/dashboard/create-collection";
+export * from "@/pages/dashboard/edit-collection";
+export * from "@/pages/dashboard/notifications";

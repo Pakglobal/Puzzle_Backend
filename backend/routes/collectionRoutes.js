@@ -4,25 +4,43 @@ const router = express.Router();
 const {
     createCollection,
     getScenesByCollection,
-    getAllCollectionsWithScenes
+    getAllCollectionsWithScenes,
+    getCollection,
+    updateCollection,
+    deleteCollection,
 } = require("../controllers/collectionController");
+
 const upload = require("../middleware/collectionUpload");
 
+// GET ALL COLLECTIONS (must come BEFORE /:collectionId)
+router.get("/", getAllCollectionsWithScenes);
+
+// CREATE COLLECTION
 router.post(
     "/",
-    upload.single("thumbnail"),
+    ...upload.single("thumbnail"),
     createCollection
 );
 
-router.get(
+// GET SCENES BY COLLECTION
+router.get("/:collectionId", getScenesByCollection);
+
+
+// GET SINGLE COLLECTION
+router.get("/:collectionId/details", getCollection);
+
+// GET SCENES BY COLLECTION
+router.get("/:collectionId", getScenesByCollection);
+
+// UPDATE COLLECTION
+router.put(
     "/:collectionId",
-    getScenesByCollection
+    ...upload.single("thumbnail"),
+    updateCollection
 );
 
-router.get(
-    "/",
-    getAllCollectionsWithScenes
-);
+// DELETE COLLECTION
+router.delete("/:collectionId", deleteCollection);
 
 
 module.exports = router;
