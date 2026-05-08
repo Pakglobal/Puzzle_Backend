@@ -58,6 +58,12 @@ app.use(
 );
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+app.get("/api/debug-cors", (req, res) => {
+  res.json({
+    env: process.env.ALLOWED_ORIGINS,
+    allowed: allowedOrigins,
+  });
+});
 app.use("/api/auth", authRoutes);
 app.use("/api/scenes", sceneRoutes);
 app.use("/api/collections", collectionRoutes);
