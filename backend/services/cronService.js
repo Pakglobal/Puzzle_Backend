@@ -7,9 +7,9 @@ const { multiCastNotification } = require("../controllers/notification-controlle
 // Health tracker – lets us see if jobs are running from logs
 // ─────────────────────────────────────────────────────────────────────────────
 const health = {
-  morning:   { attempts: 0, lastSuccess: null, lastError: null },
+  morning: { attempts: 0, lastSuccess: null, lastError: null },
   afternoon: { attempts: 0, lastSuccess: null, lastError: null },
-  evening:   { attempts: 0, lastSuccess: null, lastError: null },
+  evening: { attempts: 0, lastSuccess: null, lastError: null },
 };
 
 /**
@@ -69,25 +69,25 @@ async function safeNotify(label, healthKey, title, body) {
 // ─────────────────────────────────────────────────────────────────────────────
 const SCHEDULES = [
   {
-    label:     "Morning Notification (8:30 AM IST)",
+    label: "Morning Notification (8:30 AM IST)",
     healthKey: "morning",
     expression: "30 8 * * *",
-    title:     "Start Your Day with a Puzzle",
-    body:      "Wake up your mind! Solve a beautiful jigsaw and feel refreshed.",
+    title: "Start Your Day with a Puzzle",
+    body: "Wake up your mind! Solve a beautiful jigsaw and feel refreshed.",
   },
   {
-    label:     "Afternoon Notification (1:00 PM IST)",
+    label: "Afternoon Notification (1:00 PM IST)",
     healthKey: "afternoon",
     expression: "0 13 * * *",
-    title:     "Take a Break, Play a Puzzle",
-    body:      "Stuck in the routine? Relax with a quick jigsaw challenge now!",
+    title: "Take a Break, Play a Puzzle",
+    body: "Stuck in the routine? Relax with a quick jigsaw challenge now!",
   },
   {
-    label:     "Evening Notification (8:00 PM IST)",
+    label: "Evening Notification (8:00 PM IST)",
     healthKey: "evening",
-    expression: "0 20 * * *",
-    title:     "Unwind with Art Puzzles",
-    body:      "End your day peacefully—complete a stunning puzzle tonight.",
+    expression: "27 17 * * *",
+    title: "Unwind with Art Puzzles",
+    body: "End your day peacefully—complete a stunning puzzle tonight.",
   },
 ];
 
