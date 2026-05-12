@@ -57,6 +57,11 @@ app.use(
   })
 );
 
+// ─── Health Check (Keep-Alive for Render) ──────────────────────────────────
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "active", time: new Date().toISOString() });
+});
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.get("/api/debug-cors", (req, res) => {
   res.json({

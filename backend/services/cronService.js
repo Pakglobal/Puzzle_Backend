@@ -85,7 +85,7 @@ const SCHEDULES = [
   {
     label: "Evening Notification (8:00 PM IST)",
     healthKey: "evening",
-    expression: "30 17 * * *",
+    expression: "0 20 * * *",
     title: "Unwind with Art Puzzles",
     body: "End your day peacefully—complete a stunning puzzle tonight.",
   },
