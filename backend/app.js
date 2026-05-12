@@ -9,7 +9,7 @@ const collectionRoutes = require("./routes/collectionRoutes");
 const adminCdnRoutes = require("./routes/admin/cdn.route");
 const adminDashboardRoutes = require("./routes/admin/dashboard.route");
 const notificationRoutes = require("./routes/notification-routes");
-const initCronJobs = require("./services/cronService");
+const { initCronJobs } = require("./services/cronService");
 
 const PORT = process.env.PORT || 3000;
 const HOST = "0.0.0.0";
@@ -70,6 +70,17 @@ app.use("/api/collections", collectionRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/admin", adminCdnRoutes);
 app.use("/admin/dashboard", adminDashboardRoutes);
+
+// ─── Global crash protection (keeps cron alive on unexpected errors) ─────────
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[Process] Unhandled Promise Rejection:", reason);
+  // Log but do NOT exit – crashes would kill the cron scheduler
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("[Process] Uncaught Exception:", err.message);
+  // Log but do NOT exit – crashes would kill the cron scheduler
+});
 
 // Initialize Cron Jobs for automated notifications
 initCronJobs();
