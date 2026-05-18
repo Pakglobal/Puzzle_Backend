@@ -123,3 +123,63 @@ exports.sendNotification = async (req, res) => {
     res.status(500).json({ error: "Failed to send notification", detail: error.message });
   }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pre-defined notification messages for each time slot
+// ─────────────────────────────────────────────────────────────────────────────
+const NOTIFICATION_SLOTS = {
+  morning: {
+    title: "Start Your Day with a Puzzle",
+    body: "Wake up your mind! Solve a beautiful jigsaw and feel refreshed.",
+  },
+  afternoon: {
+    title: "Take a Break, Play a Puzzle",
+    body: "Stuck in the routine? Relax with a quick jigsaw challenge now!",
+  },
+  evening: {
+    title: "Unwind with Art Puzzles",
+    body: "End your day peacefully—complete a stunning puzzle tonight.",
+  },
+};
+
+/**
+ * External cron trigger endpoint — called by cron-job.org
+ * GET /api/notifications/cron-trigger?slot=morning|afternoon|evening
+ * Header: x-cron-secret: <CRON_SECRET>
+ */
+exports.cronTriggerNotification = async (req, res) => {
+  const cronSecret = process.env.CRON_SECRET;
+
+  // 1. Validate secret
+  const providedSecret = req.headers["x-cron-secret"];
+  if (!cronSecret || providedSecret !== cronSecret) {
+    console.warn("[Cron Trigger] ❌ Unauthorized request – invalid or missing secret.");
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  // 2. Validate slot
+  const { slot } = req.query;
+  if (!slot || !NOTIFICATION_SLOTS[slot]) {
+    return res.status(400).json({
+      error: "Invalid slot. Use: morning, afternoon, or evening",
+    });
+  }
+
+  const { title, body } = NOTIFICATION_SLOTS[slot];
+  const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
+  console.log("\n" + "═".repeat(60));
+  console.log(`[Cron Trigger] 🔔 EXTERNAL TRIGGER: ${slot}`);
+  console.log(`[Cron Trigger]    Time (IST): ${now}`);
+  console.log(`[Cron Trigger]    Title     : "${title}"`);
+  console.log("═".repeat(60));
+
+  try {
+    const result = await exports.multiCastNotification(title, body);
+    console.log(`[Cron Trigger] ✅ SUCCESS – Sent: ${result.sent ?? 0}, Failed: ${result.failed ?? 0}`);
+    res.status(200).json({ success: true, slot, ...result });
+  } catch (error) {
+    console.error(`[Cron Trigger] ❌ FAILED: ${error.message}`);
+    res.status(500).json({ error: "Failed to send notification", detail: error.message });
+  }
+};
