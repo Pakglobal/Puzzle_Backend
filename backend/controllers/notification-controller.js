@@ -1,14 +1,10 @@
 const admin = require("../config/firebase-admin");
 
-/**
- * Reusable function to send notifications to all registered tokens
- * @param {string} title - The notification title
- * @param {string} message - The notification body
- * @returns {Object} - Result summary
- */
 exports.multiCastNotification = async (title, message) => {
-  console.log(`[Notification Engine] Starting multicast: "${title}"`);
-  
+  console.log(`[Notification Engine] Starting multicast...`);
+  console.log(`[Notification Engine]   Title : "${title}"`);
+  console.log(`[Notification Engine]   Body  : "${message}"`);
+
   if (!admin.apps.length) {
     console.error("[Notification Engine] Firebase Admin not initialized.");
     throw new Error("Firebase Admin not initialized.");
@@ -17,9 +13,9 @@ exports.multiCastNotification = async (title, message) => {
   // Fetch all devices from Firebase Realtime Database with a timeout
   const db = admin.database();
   const devicesRef = db.ref("devices");
-  
+
   console.log("[Notification Engine] Fetching device tokens from RTDB...");
-  
+
   try {
     // 10-second timeout for database fetch
     const snapshot = await Promise.race([
@@ -68,7 +64,19 @@ exports.multiCastNotification = async (title, message) => {
 
     console.log("[Notification Engine] Sending messages via Firebase Cloud Messaging...");
     const response = await admin.messaging().sendEachForMulticast(payload);
-    console.log(`[Notification Engine] FCM Result -> Sent: ${response.successCount}, Failed: ${response.failureCount}`);
+
+    // ── DELIVERY RECEIPT ─────────────────────────────────────────────
+    const deliveredAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    console.log("\n" + "=".repeat(60));
+    console.log("[Notification Engine] NOTIFICATION DELIVERED");
+    console.log(`[Notification Engine]   Title       : "${title}"`);
+    console.log(`[Notification Engine]   Body        : "${message}"`);
+    console.log(`[Notification Engine]   Total Tokens: ${tokens.length}`);
+    console.log(`[Notification Engine]   Sent OK     : ${response.successCount}`);
+    console.log(`[Notification Engine]   Failed      : ${response.failureCount}`);
+    console.log(`[Notification Engine]   Time (IST)  : ${deliveredAt}`);
+    console.log("=".repeat(60) + "\n");
+    // ─────────────────────────────────────────────────────────────────
 
     // Cleanup invalid tokens
     if (response.failureCount > 0) {
@@ -100,7 +108,6 @@ exports.multiCastNotification = async (title, message) => {
       total: tokens.length,
       sent: response.successCount,
       failed: response.failureCount,
-      tokens: tokens
     };
   } catch (error) {
     console.error("[Notification Engine] Critical Error:", error.message);
@@ -124,29 +131,25 @@ exports.sendNotification = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Pre-defined notification messages for each time slot
-// ─────────────────────────────────────────────────────────────────────────────
-const NOTIFICATION_SLOTS = {
-  morning: {
-    title: "Start Your Day with a Puzzle",
-    body: "Wake up your mind! Solve a beautiful jigsaw and feel refreshed.",
-  },
-  afternoon: {
-    title: "Take a Break, Play a Puzzle",
-    body: "Stuck in the routine? Relax with a quick jigsaw challenge now!",
-  },
-  evening: {
-    title: "Unwind with Art Puzzles",
-    body: "End your day peacefully—complete a stunning puzzle tonight.",
-  },
-};
 
-/**
- * External cron trigger endpoint — called by cron-job.org
- * GET /api/notifications/cron-trigger?slot=morning|afternoon|evening
- * Header: x-cron-secret: <CRON_SECRET>
- */
+const NOTIFICATION_POOL = require("../data/notification-messages.json");
+const VALID_SLOTS = Object.keys(NOTIFICATION_POOL); // ["morning", "afternoon", "evening"]
+
+
+
+function getRandomMessage(slot) {
+  const pool = NOTIFICATION_POOL[slot];
+  if (!pool || pool.length === 0) {
+    throw new Error(`No messages found for slot: ${slot}`);
+  }
+  const randomIndex = Math.floor(Math.random() * pool.length);
+  return pool[randomIndex];
+}
+
+
+exports.getRandomMessage = getRandomMessage;
+
+
 exports.cronTriggerNotification = async (req, res) => {
   const cronSecret = process.env.CRON_SECRET;
 
@@ -159,13 +162,14 @@ exports.cronTriggerNotification = async (req, res) => {
 
   // 2. Validate slot
   const { slot } = req.query;
-  if (!slot || !NOTIFICATION_SLOTS[slot]) {
+  if (!slot || !VALID_SLOTS.includes(slot)) {
     return res.status(400).json({
-      error: "Invalid slot. Use: morning, afternoon, or evening",
+      error: `Invalid slot. Use: ${VALID_SLOTS.join(", ")}`,
     });
   }
 
-  const { title, body } = NOTIFICATION_SLOTS[slot];
+  // Pick a random message from the pool for this slot
+  const { title, body } = getRandomMessage(slot);
   const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
   console.log("\n" + "═".repeat(60));

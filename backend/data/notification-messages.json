@@ -1,0 +1,248 @@
+{
+  "morning": [
+    {
+      "title": "Morning Puzzle Time!",
+      "body": "Start your day — a new puzzle awaits!"
+    },
+    {
+      "title": "Rise and Solve!",
+      "body": "Beat your record before breakfast. Play now!"
+    },
+    {
+      "title": "Good Morning!",
+      "body": "Your daily art puzzle is ready. Solve it!"
+    },
+    {
+      "title": "New Day, New Puzzle!",
+      "body": "Fresh artwork is waiting. Can you complete it?"
+    },
+    {
+      "title": "Morning Challenge!",
+      "body": "Kick off your day with a quick puzzle!"
+    },
+    {
+      "title": "Puzzle Before Coffee?",
+      "body": "Warm up your brain — one piece at a time!"
+    },
+    {
+      "title": "Today's Art Is Here!",
+      "body": "Assemble the masterpiece. Open and play!"
+    },
+    {
+      "title": "Early Bird Puzzles!",
+      "body": "You're up! Your morning puzzle is live."
+    },
+    {
+      "title": "Morning Brain Boost!",
+      "body": "Solve a puzzle. Stay sharp all day long!"
+    },
+    {
+      "title": "Hello, Puzzle Master!",
+      "body": "A brand new puzzle is waiting for you!"
+    },
+    {
+      "title": "Unlock Today's Art!",
+      "body": "Your morning puzzle is live. Piece it up!"
+    },
+    {
+      "title": "Wake Up and Solve!",
+      "body": "Best morning routine? A quick art puzzle!"
+    },
+    {
+      "title": "Your Puzzle Awaits!",
+      "body": "Can you solve it before your day begins?"
+    },
+    {
+      "title": "Fresh Puzzle Alert!",
+      "body": "New morning, new artwork. Play now!"
+    },
+    {
+      "title": "Masterpiece Unlocked!",
+      "body": "Open the app and complete today's puzzle!"
+    },
+    {
+      "title": "Puzzle Up!",
+      "body": "A beautiful new puzzle just dropped. Go!"
+    },
+    {
+      "title": "Start Smart Today!",
+      "body": "Solve an art puzzle. Feel focused all day!"
+    },
+    {
+      "title": "Morning Art Drop!",
+      "body": "Today's puzzle art is live. Come see it!"
+    },
+    {
+      "title": "Can You Solve It?",
+      "body": "Today's jigsaw is tricky. Give it a try!"
+    },
+    {
+      "title": "Your Daily Puzzle!",
+      "body": "A new art challenge every morning. Play!"
+    }
+  ],
+  "afternoon": [
+    {
+      "title": "Break Time Puzzle!",
+      "body": "Take 5 mins — your puzzle is waiting!"
+    },
+    {
+      "title": "Midday Challenge!",
+      "body": "Beat the slump — solve an art puzzle now!"
+    },
+    {
+      "title": "Lunch Break? Puzzle!",
+      "body": "Quick puzzle = refreshed brain. Play now!"
+    },
+    {
+      "title": "Afternoon Art Time!",
+      "body": "Your puzzle break is here. Tap to play!"
+    },
+    {
+      "title": "Halfway There!",
+      "body": "Reward yourself with a quick puzzle break!"
+    },
+    {
+      "title": "Creative Break Time!",
+      "body": "5 minutes of puzzling = big focus boost!"
+    },
+    {
+      "title": "Beat the Slump!",
+      "body": "A puzzle will wake your brain right up!"
+    },
+    {
+      "title": "3 PM Puzzle Drop!",
+      "body": "Skip the coffee — solve a puzzle instead!"
+    },
+    {
+      "title": "Art Break Alert!",
+      "body": "A gorgeous puzzle is ready. Come play!"
+    },
+    {
+      "title": "Quick Puzzle Win!",
+      "body": "5 mins of puzzling = total recharge. Go!"
+    },
+    {
+      "title": "Afternoon Brain Game!",
+      "body": "Challenge yourself — today's puzzle is live!"
+    },
+    {
+      "title": "Midday Masterpiece!",
+      "body": "Piece together today's art. Open now!"
+    },
+    {
+      "title": "Challenge Unlocked!",
+      "body": "How fast can you solve today's puzzle?"
+    },
+    {
+      "title": "Take Five, Play On!",
+      "body": "One puzzle. Five minutes. Total fun. Go!"
+    },
+    {
+      "title": "Puzzle Therapy!",
+      "body": "Stressed? Piece together art. Feel calm!"
+    },
+    {
+      "title": "Afternoon Escape!",
+      "body": "Escape the routine — solve a puzzle now!"
+    },
+    {
+      "title": "Game On!",
+      "body": "Your afternoon puzzle challenge is live!"
+    },
+    {
+      "title": "Need a Break?",
+      "body": "Step away and solve a beautiful puzzle!"
+    },
+    {
+      "title": "Puzzle Time!",
+      "body": "Your afternoon jigsaw is ready. Play it!"
+    },
+    {
+      "title": "Stay Sharp!",
+      "body": "Keep your brain active — solve a puzzle!"
+    }
+  ],
+  "evening": [
+    {
+      "title": "Unwind with Puzzles!",
+      "body": "End your day beautifully — play now!"
+    },
+    {
+      "title": "Evening Puzzle Time!",
+      "body": "Wind down with a quick art jigsaw. Go!"
+    },
+    {
+      "title": "Tonight's Puzzle!",
+      "body": "Relax and piece together tonight's art!"
+    },
+    {
+      "title": "Your Night, Your Art!",
+      "body": "Day is done — reward yourself. Play now!"
+    },
+    {
+      "title": "Evening Challenge!",
+      "body": "Can you complete tonight's puzzle? Try it!"
+    },
+    {
+      "title": "Night Art Session!",
+      "body": "Tonight's artwork is stunning. Come see!"
+    },
+    {
+      "title": "Good Evening!",
+      "body": "Your nightly puzzle is live. Solve it!"
+    },
+    {
+      "title": "Relax and Assemble!",
+      "body": "Cozy up and complete tonight's jigsaw!"
+    },
+    {
+      "title": "Night Owl Puzzle!",
+      "body": "Late evening, great puzzle. Play now!"
+    },
+    {
+      "title": "Puzzle Before Bed!",
+      "body": "Puzzles help you sleep better. Try it!"
+    },
+    {
+      "title": "End Day Creatively!",
+      "body": "Finish a puzzle. Feel accomplished. Go!"
+    },
+    {
+      "title": "Evening Serenity",
+      "body": "Slow down and piece together tonight's art!"
+    },
+    {
+      "title": "Dusk Puzzle Drop!",
+      "body": "Today's final puzzle challenge is live!"
+    },
+    {
+      "title": "Bedtime Puzzle!",
+      "body": "10 calming minutes of art puzzles. Play!"
+    },
+    {
+      "title": "Tonight's Masterpiece!",
+      "body": "A hand-picked puzzle is waiting for you!"
+    },
+    {
+      "title": "Close Day Beautifully!",
+      "body": "Don't scroll — create! Solve tonight's art."
+    },
+    {
+      "title": "One Last Puzzle!",
+      "body": "Before you sleep — complete tonight's art!"
+    },
+    {
+      "title": "Perfect Wind Down!",
+      "body": "Solve a puzzle. Clear your mind tonight!"
+    },
+    {
+      "title": "Art Awaits Tonight!",
+      "body": "A beautiful puzzle is ready. Come play!"
+    },
+    {
+      "title": "Evening Game Time!",
+      "body": "Put the phone down — pick a puzzle up!"
+    }
+  ]
+}

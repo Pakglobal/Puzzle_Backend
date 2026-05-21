@@ -9,7 +9,8 @@ const collectionRoutes = require("./routes/collectionRoutes");
 const adminCdnRoutes = require("./routes/admin/cdn.route");
 const adminDashboardRoutes = require("./routes/admin/dashboard.route");
 const notificationRoutes = require("./routes/notification-routes");
-const { initCronJobs } = require("./services/cronService");
+// [DISABLED] Internal cron disabled — using cron-job.org (external) as sole trigger
+// const { initCronJobs } = require("./services/cronService");
 
 const PORT = process.env.PORT || 3000;
 const HOST = "0.0.0.0";
@@ -29,7 +30,7 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
+
       console.log(`Checking CORS for origin: ${origin}`);
       console.log(`Allowed origins: ${JSON.stringify(allowedOrigins)}`);
 
@@ -87,8 +88,8 @@ process.on("uncaughtException", (err) => {
   // Log but do NOT exit – crashes would kill the cron scheduler
 });
 
-// Initialize Cron Jobs for automated notifications
-initCronJobs();
+// [DISABLED] Internal cron disabled — notifications triggered externally by cron-job.org
+// initCronJobs();
 
 // ─── Global error handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
