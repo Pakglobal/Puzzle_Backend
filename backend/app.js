@@ -9,8 +9,6 @@ const collectionRoutes = require("./routes/collectionRoutes");
 const adminCdnRoutes = require("./routes/admin/cdn.route");
 const adminDashboardRoutes = require("./routes/admin/dashboard.route");
 const notificationRoutes = require("./routes/notification-routes");
-// [DISABLED] Internal cron disabled — using cron-job.org (external) as sole trigger
-// const { initCronJobs } = require("./services/cronService");
 
 const PORT = process.env.PORT || 3000;
 const HOST = "0.0.0.0";
@@ -28,19 +26,9 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
+      // Allow requests with no origin (mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
-
-      console.log(`Checking CORS for origin: ${origin}`);
-      console.log(`Allowed origins: ${JSON.stringify(allowedOrigins)}`);
-
-      const isAllowed = allowedOrigins.includes(origin);
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.log(`CORS blocked for origin: ${origin}`);
-        callback(null, false);
-      }
+      callback(null, allowedOrigins.includes(origin));
     },
     credentials: true,
   })
@@ -77,19 +65,14 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/admin", adminCdnRoutes);
 app.use("/admin/dashboard", adminDashboardRoutes);
 
-// ─── Global crash protection (keeps cron alive on unexpected errors) ─────────
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("[Process] Unhandled Promise Rejection:", reason);
-  // Log but do NOT exit – crashes would kill the cron scheduler
+// ─── Global crash protection ─────────────────────────────────────────────────
+process.on("unhandledRejection", (reason) => {
+  console.error("[Process] Unhandled Rejection:", reason);
 });
 
 process.on("uncaughtException", (err) => {
   console.error("[Process] Uncaught Exception:", err.message);
-  // Log but do NOT exit – crashes would kill the cron scheduler
 });
-
-// [DISABLED] Internal cron disabled — notifications triggered externally by cron-job.org
-// initCronJobs();
 
 // ─── Global error handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
