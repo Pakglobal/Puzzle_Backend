@@ -138,12 +138,16 @@ exports.cronTriggerNotification = async (req, res) => {
 
   try {
     const result = await exports.multiCastNotification(title, body);
-    const time = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-    console.log(
-      `[Notification] ${time} | Slot: ${slot} | Title: "${title}" | Sent: ${result.sent}/${result.total}`
-    );
+    const now = new Date();
+    const date = now.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+    const time = now.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true });
+
+    console.log(`[Notification] Date: ${date} | Time: ${time} | Slot: ${slot} | Title: "${title}" | Body: "${body}"`);
+    console.log(`[Delivery]     Total: ${result.total} | Sent: ${result.sent} | Failed: ${result.failed}`);
+
     res.status(200).json({ success: true, slot, ...result });
   } catch (error) {
+    console.error(`[Notification ERROR] ${new Date().toISOString()} | Slot: ${slot} | ${error.message}`);
     res.status(500).json({ error: "Failed to send notification", detail: error.message });
   }
 };
