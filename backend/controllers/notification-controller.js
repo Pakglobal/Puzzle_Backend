@@ -3,6 +3,15 @@ const NOTIFICATION_POOL = require("../data/notification-messages.json");
 
 const VALID_SLOTS = Object.keys(NOTIFICATION_POOL); // ["morning", "afternoon", "evening"]
 
+// ─── Incoming request audit logger (helps detect unknown callers) ─────────────
+exports.logIncomingRequest = (req, res, next) => {
+  const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+  console.log(
+    `[REQUEST] ${now} | Method: ${req.method} | Path: ${req.path} | IP: ${req.ip} | UA: ${req.headers["user-agent"] ?? "unknown"}`
+  );
+  next();
+};
+
 // ─── Core multicast engine ────────────────────────────────────────────────────
 exports.multiCastNotification = async (title, message) => {
   if (!admin.apps.length) {
@@ -134,9 +143,9 @@ exports.cronTriggerNotification = async (req, res) => {
     return res.status(400).json({ error: `Invalid slot. Use: ${VALID_SLOTS.join(", ")}` });
   }
 
-  const { title, body } = getRandomMessage(slot);
-
   try {
+    // ✅ Inside try so message-pool errors are caught and returned properly
+    const { title, body } = getRandomMessage(slot);
     const result = await exports.multiCastNotification(title, body);
     const now = new Date();
     const date = now.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
@@ -149,5 +158,52 @@ exports.cronTriggerNotification = async (req, res) => {
   } catch (error) {
     console.error(`[Notification ERROR] ${new Date().toISOString()} | Slot: ${slot} | ${error.message}`);
     res.status(500).json({ error: "Failed to send notification", detail: error.message });
+  }
+};
+
+// ─── Single-device test (admin only — your device, not broadcast) ─────────────
+exports.testSingleDevice = async (req, res) => {
+  const cronSecret = process.env.CRON_SECRET;
+  const providedSecret = req.headers["x-cron-secret"];
+
+  if (!cronSecret || providedSecret !== cronSecret) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const { token, title, message } = req.body;
+
+  if (!token || !title || !message) {
+    return res.status(400).json({ error: "token, title, and message are required" });
+  }
+
+  if (!admin.apps.length) {
+    return res.status(500).json({ error: "Firebase Admin not initialized." });
+  }
+
+  try {
+    const payload = {
+      notification: { title, body: message },
+      data: { title, body: message, click_action: "FLUTTER_NOTIFICATION_CLICK" },
+      android: {
+        priority: "high",
+        notification: {
+          sound: "default",
+          channelId: "high_importance_channel",
+          priority: "high",
+        },
+      },
+      apns: {
+        headers: { "apns-priority": "10" },
+        payload: { aps: { sound: "default" } },
+      },
+      token, // single device only
+    };
+
+    const response = await admin.messaging().send(payload);
+    console.log(`[TEST-DEVICE] Sent to single token. MessageId: ${response}`);
+    res.status(200).json({ success: true, messageId: response });
+  } catch (error) {
+    console.error(`[TEST-DEVICE ERROR] ${error.message}`);
+    res.status(500).json({ error: "Failed to send test notification", detail: error.message });
   }
 };
