@@ -7,12 +7,14 @@ const VALID_SLOTS = Object.keys(NOTIFICATION_POOL); // ["morning", "afternoon", 
 exports.logIncomingRequest = (req, res, next) => {
   const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
   console.log(
-    `[REQUEST] ${now} | Method: ${req.method} | Path: ${req.path} | IP: ${req.ip} | UA: ${req.headers["user-agent"] ?? "unknown"}`
+    `[REQUEST] ${now} | Method: ${req.method} | Path: ${req.path}`
   );
   next();
 };
 
-// ─── Core multicast engine ────────────────────────────────────────────────────
+
+const FCM_BATCH_SIZE = 500;
+
 exports.multiCastNotification = async (title, message) => {
   if (!admin.apps.length) {
     throw new Error("Firebase Admin not initialized.");
@@ -45,7 +47,13 @@ exports.multiCastNotification = async (title, message) => {
     return { success: true, total: 0, sent: 0, failed: 0 };
   }
 
-  const payload = {
+  // ─── Chunk into ≤500-token batches (FCM hard limit) ──────────────────────
+  const batches = [];
+  for (let i = 0; i < tokens.length; i += FCM_BATCH_SIZE) {
+    batches.push(tokens.slice(i, i + FCM_BATCH_SIZE));
+  }
+
+  const basePayload = {
     notification: { title, body: message },
     data: { title, body: message, click_action: "FLUTTER_NOTIFICATION_CLICK" },
     android: {
@@ -63,42 +71,58 @@ exports.multiCastNotification = async (title, message) => {
         aps: { sound: "default", badge: 1, contentAvailable: true },
       },
     },
-    tokens,
   };
 
-  const response = await admin.messaging().sendEachForMulticast(payload);
+  // Send all batches in parallel and collect responses
+  const batchResults = await Promise.all(
+    batches.map((batchTokens) =>
+      admin.messaging().sendEachForMulticast({ ...basePayload, tokens: batchTokens })
+    )
+  );
 
-  // Cleanup invalid tokens
-  if (response.failureCount > 0) {
-    const tokensToRemove = [];
-    response.responses.forEach((res, idx) => {
-      if (!res.success) {
-        const errorCode = res.error?.code;
-        if (
-          errorCode === "messaging/registration-token-not-registered" ||
-          errorCode === "messaging/invalid-registration-token"
-        ) {
-          tokensToRemove.push(tokens[idx]);
-        }
-      }
-    });
+  // ─── Merge results + collect stale tokens across all batches ─────────────
+  let totalSent = 0;
+  let totalFailed = 0;
+  const tokensToRemove = [];
 
-    if (tokensToRemove.length > 0) {
-      const removePromises = [];
-      Object.keys(devicesData).forEach((deviceId) => {
-        if (tokensToRemove.includes(devicesData[deviceId].token)) {
-          removePromises.push(db.ref(`devices/${deviceId}`).remove());
+  batchResults.forEach((response, batchIdx) => {
+    totalSent += response.successCount;
+    totalFailed += response.failureCount;
+
+    if (response.failureCount > 0) {
+      const batchTokens = batches[batchIdx];
+      response.responses.forEach((res, idx) => {
+        if (!res.success) {
+          const errorCode = res.error?.code;
+          if (
+            errorCode === "messaging/registration-token-not-registered" ||
+            errorCode === "messaging/invalid-registration-token"
+          ) {
+            tokensToRemove.push(batchTokens[idx]);
+          }
         }
       });
-      await Promise.all(removePromises);
     }
+  });
+
+  // Cleanup invalid tokens from Firebase RTDB
+  if (tokensToRemove.length > 0 && devicesData) {
+    const removePromises = [];
+    Object.keys(devicesData).forEach((deviceId) => {
+      if (tokensToRemove.includes(devicesData[deviceId].token)) {
+        removePromises.push(db.ref(`devices/${deviceId}`).remove());
+      }
+    });
+    await Promise.all(removePromises);
+    console.log(`[Cleanup] Removed ${removePromises.length} stale device token(s).`);
   }
 
   return {
     success: true,
     total: tokens.length,
-    sent: response.successCount,
-    failed: response.failureCount,
+    batches: batches.length,
+    sent: totalSent,
+    failed: totalFailed,
   };
 };
 
@@ -161,49 +185,3 @@ exports.cronTriggerNotification = async (req, res) => {
   }
 };
 
-// ─── Single-device test (admin only — your device, not broadcast) ─────────────
-exports.testSingleDevice = async (req, res) => {
-  const cronSecret = process.env.CRON_SECRET;
-  const providedSecret = req.headers["x-cron-secret"];
-
-  if (!cronSecret || providedSecret !== cronSecret) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const { token, title, message } = req.body;
-
-  if (!token || !title || !message) {
-    return res.status(400).json({ error: "token, title, and message are required" });
-  }
-
-  if (!admin.apps.length) {
-    return res.status(500).json({ error: "Firebase Admin not initialized." });
-  }
-
-  try {
-    const payload = {
-      notification: { title, body: message },
-      data: { title, body: message, click_action: "FLUTTER_NOTIFICATION_CLICK" },
-      android: {
-        priority: "high",
-        notification: {
-          sound: "default",
-          channelId: "high_importance_channel",
-          priority: "high",
-        },
-      },
-      apns: {
-        headers: { "apns-priority": "10" },
-        payload: { aps: { sound: "default" } },
-      },
-      token, // single device only
-    };
-
-    const response = await admin.messaging().send(payload);
-    console.log(`[TEST-DEVICE] Sent to single token. MessageId: ${response}`);
-    res.status(200).json({ success: true, messageId: response });
-  } catch (error) {
-    console.error(`[TEST-DEVICE ERROR] ${error.message}`);
-    res.status(500).json({ error: "Failed to send test notification", detail: error.message });
-  }
-};
