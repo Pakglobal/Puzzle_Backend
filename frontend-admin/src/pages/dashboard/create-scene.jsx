@@ -128,7 +128,7 @@ export function CreateScene() {
                 levels: levels.map((lvl, idx) => ({
                     levelId: (idx + 1).toString(),
                     hasNewImage: !!lvl.image
-                })), 
+                })),
                 objects: objects.map((obj) => ({
                     levelId: obj.levelId.toString(),
                     x: parseFloat(obj.x),
@@ -194,19 +194,39 @@ export function CreateScene() {
                         </CardHeader>
                         <CardBody className="flex flex-col gap-5">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <Select
-                                    label="Select Collection"
-                                    value={collectionId}
-                                    onChange={(val) => setCollectionId(val)}
-                                    color="light-blue"
-                                    disabled={fetchingCollections}
-                                >
-                                    {collections.map((col) => (
-                                        <Option key={col.id} value={col.id}>
-                                            {col.collectionName}
-                                        </Option>
-                                    ))}
-                                </Select>
+                                {/* Native select — avoids Material Tailwind async-data bug where
+                                    first click doesn't fire onChange when options load after mount */}
+                                <div className="relative w-full">
+                                    <select
+                                        id="collectionSelect"
+                                        value={collectionId}
+                                        onChange={(e) => setCollectionId(e.target.value)}
+                                        disabled={fetchingCollections}
+                                        className="peer w-full h-10 rounded-[7px] border border-blue-gray-200 bg-transparent px-3 py-2 text-sm text-blue-gray-700 outline-none transition-all focus:border-light-blue-500 focus:border-2 disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                                    >
+                                        <option value="" disabled>
+                                            {fetchingCollections ? "Loading collections…" : "Select Collection"}
+                                        </option>
+                                        {collections.map((col) => (
+                                            <option key={col.id} value={col.id}>
+                                                {col.collectionName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {/* Floating label */}
+                                    <label
+                                        htmlFor="collectionSelect"
+                                        className="pointer-events-none absolute -top-1.5 left-2.5 bg-white px-1 text-[11px] font-normal text-blue-gray-400"
+                                    >
+                                        Select Collection
+                                    </label>
+                                    {/* Chevron icon */}
+                                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-blue-gray-400">
+                                        <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                                        </svg>
+                                    </span>
+                                </div>
                                 <Input
                                     label="Scene Name"
                                     value={sceneName}
@@ -389,18 +409,32 @@ export function CreateScene() {
                                             </Tooltip>
                                         </div>
                                         <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                                            <Select
-                                                label="Level"
-                                                value={obj.levelId.toString()}
-                                                onChange={(val) => updateObject(i, "levelId", val)}
-                                                color="light-blue"
-                                            >
-                                                {levels.map((_, idx) => (
-                                                    <Option key={idx} value={(idx + 1).toString()}>
-                                                        Level {idx + 1}
-                                                    </Option>
-                                                ))}
-                                            </Select>
+                                            {/* Native select — same fix as Collection dropdown */}
+                                            <div className="relative w-full">
+                                                <select
+                                                    id={`levelSelect-${i}`}
+                                                    value={obj.levelId.toString()}
+                                                    onChange={(e) => updateObject(i, "levelId", e.target.value)}
+                                                    className="peer w-full h-10 rounded-[7px] border border-blue-gray-200 bg-transparent px-3 py-2 text-sm text-blue-gray-700 outline-none transition-all focus:border-light-blue-500 focus:border-2 appearance-none cursor-pointer"
+                                                >
+                                                    {levels.map((_, idx) => (
+                                                        <option key={idx} value={(idx + 1).toString()}>
+                                                            Level {idx + 1}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <label
+                                                    htmlFor={`levelSelect-${i}`}
+                                                    className="pointer-events-none absolute -top-1.5 left-2.5 bg-white px-1 text-[11px] font-normal text-blue-gray-400"
+                                                >
+                                                    Level
+                                                </label>
+                                                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-blue-gray-400">
+                                                    <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                                                    </svg>
+                                                </span>
+                                            </div>
                                             <Input
                                                 label="X"
                                                 type="number"

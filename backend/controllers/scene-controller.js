@@ -121,9 +121,17 @@ exports.getScenesForGame = async (req, res, next) => {
   try {
     const baseUrl = getBaseUrl(req);
 
-    const scenes = await Scene.find()
-      .sort({ sceneName: 1 })
-      .lean();
+    // const scenes = await Scene.find()
+    //   .sort({ sceneName: 1 })
+    //   .lean();
+
+    // Sort numerically descending — Room 130, 129, 128 … 01 (newest number first)
+    const scenes = await Scene.find().lean();
+    scenes.sort((a, b) => {
+      const numA = parseInt(a.sceneName.match(/\d+/)?.[0] ?? 0, 10);
+      const numB = parseInt(b.sceneName.match(/\d+/)?.[0] ?? 0, 10);
+      return numB - numA;
+    });
 
     const formattedScenes = scenes.map((scene) => {
       const levelMap = new Map();
@@ -136,6 +144,7 @@ exports.getScenesForGame = async (req, res, next) => {
         sceneName: scene.sceneName,
         height: scene.height,
         width: scene.width,
+        createdAt: scene.createdAt,
         previewUrl: makeUrl(baseUrl, scene.previewImageUrl),
         originalImageUrl: makeUrl(baseUrl, scene.originalImageUrl),
         finalLottieUrl: makeUrl(baseUrl, scene.finalLottieUrl),
@@ -157,7 +166,7 @@ exports.getScenesForGame = async (req, res, next) => {
       };
     });
 
-    res.status(200).json({ success: true, scenes: formattedScenes });
+    res.status(200).json({ success: true, total: scenes.length, scenes: formattedScenes });
 
   } catch (err) {
     next(err);

@@ -38,12 +38,22 @@ export function Scenes() {
     const [sceneToDelete, setSceneToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // ── Pagination ────────────────────────────────────────────────────────────
+    const PAGE_SIZE = 10;
+    const [currentPage, setCurrentPage] = useState(1);
+    const totalPages = Math.max(1, Math.ceil(scenes.length / PAGE_SIZE));
+    const paginatedScenes = scenes.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE
+    );
+
     const fetchScenes = async () => {
         setLoading(true);
         try {
             const data = await getAllScenes();
             if (data.success) {
                 setScenes(data.scenes || []);
+                setCurrentPage(1); // Always reset to first page (newest) on refresh
             } else {
                 toast.error("Failed to load scenes");
             }
@@ -100,7 +110,7 @@ export function Scenes() {
     };
 
     return (
-        <div className="mt-12 mb-8 flex flex-col gap-12">
+        <div className="mt-12 mb-8 flex flex-col gap-4">
             {/* SCENES TABLE */}
             <Card>
                 <CardHeader
@@ -118,6 +128,14 @@ export function Scenes() {
                             color="white"
                             className="text-white border-white/30"
                         />
+                        {scenes.length > 0 && (
+                            <Chip
+                                value={`Page ${currentPage} of ${totalPages}`}
+                                variant="ghost"
+                                color="white"
+                                className="text-white/70 border-white/20 text-xs"
+                            />
+                        )}
                     </div>
                     <Button
                         size="sm"
@@ -156,7 +174,7 @@ export function Scenes() {
                                         (el) => (
                                             <th
                                                 key={el}
-                                                className="border-b border-blue-gray-50 py-3 px-5 text-left"
+                                                className="border-b border-blue-gray-50 py-3 px-5 text-left bg-white"
                                             >
                                                 <Typography
                                                     variant="small"
@@ -169,142 +187,220 @@ export function Scenes() {
                                     )}
                                 </tr>
                             </thead>
-                            <tbody>
-                                {scenes.map((scene, key) => {
-                                    const className = `py-3 px-5 ${key === scenes.length - 1
-                                        ? ""
-                                        : "border-b border-blue-gray-50"
-                                        }`;
-
-                                    return (
-                                        <tr key={scene.id}>
-                                            {/* Preview Image */}
-                                            <td className={className}>
-                                                <div className="h-14 w-14 rounded-lg overflow-hidden bg-blue-gray-50">
-                                                    {scene.previewUrl ? (
-                                                        <img
-                                                            src={scene.previewUrl}
-                                                            alt={scene.sceneName}
-                                                            className="h-full w-full object-cover"
-                                                            onError={(e) => {
-                                                                e.target.style.display = "none";
-                                                                e.target.parentElement.innerHTML =
-                                                                    '<div class="flex h-full w-full items-center justify-center"><svg class="h-6 w-6 text-blue-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>';
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <div className="flex h-full w-full items-center justify-center">
-                                                            <PhotoIcon className="h-6 w-6 text-blue-gray-300" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-
-                                            {/* Scene Name */}
-                                            <td className={className}>
-                                                <Typography
-                                                    variant="small"
-                                                    color="blue-gray"
-                                                    className="font-semibold"
-                                                >
-                                                    {scene.sceneName}
-                                                </Typography>
-                                                <Typography className="text-xs font-normal text-blue-gray-400">
-                                                    ID: {scene.id?.slice(-8)}
-                                                </Typography>
-                                            </td>
-
-                                            {/* Dimensions */}
-                                            <td className={className}>
-                                                <Chip
-                                                    variant="ghost"
-                                                    color="light-blue"
-                                                    value={`${scene.width} × ${scene.height}`}
-                                                    className="w-fit text-xs"
-                                                />
-                                            </td>
-
-                                            {/* Levels count */}
-                                            <td className={className}>
-                                                <div className="flex items-center gap-1">
-                                                    <div className="grid h-7 w-7 place-items-center rounded-full bg-light-blue-50">
-                                                        <CubeIcon className="h-4 w-4 text-light-blue-500" />
-                                                    </div>
-                                                    <Typography
-                                                        variant="small"
-                                                        className="font-semibold text-blue-gray-600"
-                                                    >
-                                                        {scene.levels?.length || 0}
-                                                    </Typography>
-                                                </div>
-                                            </td>
-
-                                            {/* Objects count */}
-                                            <td className={className}>
-                                                <div className="flex items-center gap-1">
-                                                    <div className="grid h-7 w-7 place-items-center rounded-full bg-light-blue-50">
-                                                        <PuzzlePieceIcon className="h-4 w-4 text-light-blue-500" />
-                                                    </div>
-                                                    <Typography
-                                                        variant="small"
-                                                        className="font-semibold text-blue-gray-600"
-                                                    >
-                                                        {scene.objects?.length || 0}
-                                                    </Typography>
-                                                </div>
-                                            </td>
-
-                                            {/* Actions */}
-                                            <td className={className}>
-                                                <div className="flex items-center gap-1">
-                                                    <Tooltip content="View Details">
-                                                        <IconButton
-                                                            variant="text"
-                                                            color="light-blue"
-                                                            onClick={() => openDetail(scene)}
-                                                        >
-                                                            <EyeIcon className="h-5 w-5" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip content="Edit Scene">
-                                                        <IconButton
-                                                            variant="text"
-                                                            color="orange"
-                                                            onClick={() => navigate(`/dashboard/edit-scene/${scene.id}`)}
-                                                        >
-                                                            <PencilSquareIcon className="h-5 w-5" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip content="Delete Scene">
-                                                        <IconButton
-                                                            variant="text"
-                                                            color="red"
-                                                            onClick={() => openDeleteDialog(scene)}
-                                                        >
-                                                            <TrashIcon className="h-5 w-5" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
                         </table>
                     )}
+                    {/* scrollable rows only */}
+                    {!loading && scenes.length > 0 && (
+                        <div style={{ overflowY: "auto", maxHeight: "calc(100vh - 370px)" }}>
+                            <table className="w-full min-w-[800px] table-auto">
+                                <tbody>
+                                    {paginatedScenes.map((scene, key) => {
+                                        const className = `py-3 px-5 ${key === paginatedScenes.length - 1
+                                            ? ""
+                                            : "border-b border-blue-gray-50"
+                                            }`;
+
+                                        return (
+                                            <tr key={scene.id}>
+                                                {/* Preview Image */}
+                                                <td className={className}>
+                                                    <div className="h-14 w-14 rounded-lg overflow-hidden bg-blue-gray-50">
+                                                        {scene.previewUrl ? (
+                                                            <img
+                                                                src={scene.previewUrl}
+                                                                alt={scene.sceneName}
+                                                                className="h-full w-full object-cover"
+                                                                onError={(e) => {
+                                                                    e.target.style.display = "none";
+                                                                    e.target.parentElement.innerHTML =
+                                                                        '<div class="flex h-full w-full items-center justify-center"><svg class="h-6 w-6 text-blue-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>';
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-full w-full items-center justify-center">
+                                                                <PhotoIcon className="h-6 w-6 text-blue-gray-300" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+
+                                                {/* Scene Name */}
+                                                <td className={className}>
+                                                    <Typography
+                                                        variant="small"
+                                                        color="blue-gray"
+                                                        className="font-semibold"
+                                                    >
+                                                        {scene.sceneName}
+                                                    </Typography>
+                                                    <Typography className="text-xs font-normal text-blue-gray-400">
+                                                        ID: {scene.id?.slice(-8)}
+                                                    </Typography>
+                                                </td>
+
+                                                {/* Dimensions */}
+                                                <td className={className}>
+                                                    <Chip
+                                                        variant="ghost"
+                                                        color="light-blue"
+                                                        value={`${scene.width} × ${scene.height}`}
+                                                        className="w-fit text-xs"
+                                                    />
+                                                </td>
+
+                                                {/* Levels count */}
+                                                <td className={className}>
+                                                    <div className="flex items-center gap-1">
+                                                        <div className="grid h-7 w-7 place-items-center rounded-full bg-light-blue-50">
+                                                            <CubeIcon className="h-4 w-4 text-light-blue-500" />
+                                                        </div>
+                                                        <Typography
+                                                            variant="small"
+                                                            className="font-semibold text-blue-gray-600"
+                                                        >
+                                                            {scene.levels?.length || 0}
+                                                        </Typography>
+                                                    </div>
+                                                </td>
+
+                                                {/* Objects count */}
+                                                <td className={className}>
+                                                    <div className="flex items-center gap-1">
+                                                        <div className="grid h-7 w-7 place-items-center rounded-full bg-light-blue-50">
+                                                            <PuzzlePieceIcon className="h-4 w-4 text-light-blue-500" />
+                                                        </div>
+                                                        <Typography
+                                                            variant="small"
+                                                            className="font-semibold text-blue-gray-600"
+                                                        >
+                                                            {scene.objects?.length || 0}
+                                                        </Typography>
+                                                    </div>
+                                                </td>
+
+                                                {/* Actions */}
+                                                <td className={className}>
+                                                    <div className="flex items-center gap-1">
+                                                        <Tooltip content="View Details">
+                                                            <IconButton
+                                                                variant="text"
+                                                                color="light-blue"
+                                                                onClick={() => openDetail(scene)}
+                                                            >
+                                                                <EyeIcon className="h-5 w-5" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip content="Edit Scene">
+                                                            <IconButton
+                                                                variant="text"
+                                                                color="orange"
+                                                                onClick={() => navigate(`/dashboard/edit-scene/${scene.id}`)}
+                                                            >
+                                                                <PencilSquareIcon className="h-5 w-5" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip content="Delete Scene">
+                                                            <IconButton
+                                                                variant="text"
+                                                                color="red"
+                                                                onClick={() => openDeleteDialog(scene)}
+                                                            >
+                                                                <TrashIcon className="h-5 w-5" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </CardBody>
+
+                {/* ── Pagination Controls ──────────────────────────────── */}
+                {!loading && scenes.length > PAGE_SIZE && (
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-blue-gray-50">
+                        <Typography variant="small" className="text-blue-gray-500">
+                            Showing{" "}
+                            <span className="font-semibold text-blue-gray-700">
+                                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, scenes.length)}
+                            </span>{" "}
+                            of{" "}
+                            <span className="font-semibold text-blue-gray-700">{scenes.length}</span>{" "}
+                            scenes
+                        </Typography>
+
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outlined"
+                                color="light-blue"
+                                size="sm"
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage((p) => p - 1)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs"
+                            >
+                                ← Prev
+                            </Button>
+
+                            {/* Page number pills */}
+                            <div className="flex items-center gap-1">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter((p) => {
+                                        // Show first, last, current ±1, and ellipsis anchors
+                                        return (
+                                            p === 1 ||
+                                            p === totalPages ||
+                                            Math.abs(p - currentPage) <= 1
+                                        );
+                                    })
+                                    .reduce((acc, p, idx, arr) => {
+                                        if (idx > 0 && p - arr[idx - 1] > 1) {
+                                            acc.push("...");
+                                        }
+                                        acc.push(p);
+                                        return acc;
+                                    }, [])
+                                    .map((item, idx) =>
+                                        item === "..." ? (
+                                            <span
+                                                key={`ellipsis-${idx}`}
+                                                className="px-1 text-blue-gray-400 text-xs"
+                                            >
+                                                …
+                                            </span>
+                                        ) : (
+                                            <button
+                                                key={item}
+                                                onClick={() => setCurrentPage(item)}
+                                                className={`h-7 w-7 rounded text-xs font-medium transition-colors ${currentPage === item
+                                                    ? "bg-light-blue-500 text-white shadow-sm"
+                                                    : "text-blue-gray-500 hover:bg-blue-gray-50"
+                                                    }`}
+                                            >
+                                                {item}
+                                            </button>
+                                        )
+                                    )}
+                            </div>
+
+                            <Button
+                                variant="outlined"
+                                color="light-blue"
+                                size="sm"
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage((p) => p + 1)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs"
+                            >
+                                Next →
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </Card>
 
-            <div className="flex justify-center -mt-6">
-                <Button
-                    color="light-blue"
-                    className="flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
-                    onClick={() => navigate("/dashboard/create-scene")}
-                >
-                    <PlusIcon className="h-5 w-5" />
-                    Create Scene
-                </Button>
-            </div>
+
 
             {/* SCENE DETAIL DIALOG */}
             <Dialog

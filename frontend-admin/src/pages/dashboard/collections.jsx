@@ -164,129 +164,135 @@ export function Collections() {
               </Typography>
             </div>
           ) : (
-            <table className="w-full min-w-[800px] table-auto">
-              <thead>
-                <tr>
-                  {["thumbnail", "collection name", "description", "scenes", "actions"].map(
-                    (el) => (
-                      <th
-                        key={el}
-                        className="border-b border-blue-gray-50 py-3 px-5 text-left"
-                      >
-                        <Typography
-                          variant="small"
-                          className="text-[11px] font-bold uppercase text-blue-gray-400"
+            <>
+              <table className="w-full min-w-[800px] table-auto">
+                <thead>
+                  <tr>
+                    {["thumbnail", "collection name", "description", "scenes", "actions"].map(
+                      (el) => (
+                        <th
+                          key={el}
+                          className="border-b border-blue-gray-50 py-3 px-5 text-left bg-white"
                         >
-                          {el}
-                        </Typography>
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {collections.map((collection, key) => {
-                  const className = `py-3 px-5 ${key === collections.length - 1
-                    ? ""
-                    : "border-b border-blue-gray-50"
-                    }`;
+                          <Typography
+                            variant="small"
+                            className="text-[11px] font-bold uppercase text-blue-gray-400"
+                          >
+                            {el}
+                          </Typography>
+                        </th>
+                      )
+                    )}
+                  </tr>
+                </thead>
+              </table>
+              <div style={{ overflowY: "auto", maxHeight: "calc(100vh - 370px)" }}>
+                <table className="w-full min-w-[800px] table-auto">
+                  <tbody>
+                    {collections.map((collection, key) => {
+                      const className = `py-3 px-5 ${key === collections.length - 1
+                        ? ""
+                        : "border-b border-blue-gray-50"
+                        }`;
 
-                  return (
-                    <tr key={collection.id}>
-                      {/* Thumbnail Image */}
-                      <td className={className}>
-                        <div className="h-14 w-14 rounded-lg overflow-hidden bg-blue-gray-50">
-                          {collection.thumbnailUrl ? (
-                            <img
-                              src={collection.thumbnailUrl}
-                              alt={collection.collectionName}
-                              className="h-full w-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                                e.target.parentElement.innerHTML =
-                                  '<div class="flex h-full w-full items-center justify-center"><svg class="h-6 w-6 text-blue-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>';
-                              }}
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center">
-                              <PhotoIcon className="h-6 w-6 text-blue-gray-300" />
+                      return (
+                        <tr key={collection.id}>
+                          {/* Thumbnail Image */}
+                          <td className={className}>
+                            <div className="h-14 w-14 rounded-lg overflow-hidden bg-blue-gray-50">
+                              {collection.thumbnailUrl ? (
+                                <img
+                                  src={collection.thumbnailUrl}
+                                  alt={collection.collectionName}
+                                  className="h-full w-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                    e.target.parentElement.innerHTML =
+                                      '<div class="flex h-full w-full items-center justify-center"><svg class="h-6 w-6 text-blue-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>';
+                                  }}
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center">
+                                  <PhotoIcon className="h-6 w-6 text-blue-gray-300" />
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </td>
+                          </td>
 
-                      {/* Collection Name */}
-                      <td className={className}>
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-semibold"
-                        >
-                          {collection.collectionName}
-                        </Typography>
-                        <Typography className="text-xs font-normal text-blue-gray-400">
-                          ID: {collection.id?.slice(-8)}
-                        </Typography>
-                      </td>
-
-                      {/* Description */}
-                      <td className={className}>
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal truncate max-w-xs"
-                        >
-                          {collection.description || "No description"}
-                        </Typography>
-                      </td>
-
-                      {/* Scenes count */}
-                      <td className={className}>
-                        <Chip
-                          variant="ghost"
-                          color="light-blue"
-                          value={`${collection.sceneCount || 0} scenes`}
-                          className="w-fit text-xs"
-                        />
-                      </td>
-
-                      {/* Actions */}
-                      <td className={className}>
-                        <div className="flex items-center">
-                          <Tooltip content="View Details">
-                            <IconButton
-                              variant="text"
-                              color="light-blue"
-                              onClick={() => openDetail(collection)}
-                            >
-                              <EyeIcon className="h-5 w-5" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip content="Edit Collection">
-                            <IconButton
-                              variant="text"
+                          {/* Collection Name */}
+                          <td className={className}>
+                            <Typography
+                              variant="small"
                               color="blue-gray"
-                              onClick={() => navigate(`/dashboard/edit-collection/${collection.id}`)}
+                              className="font-semibold"
                             >
-                              <PencilIcon className="h-5 w-5" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip content="Delete Collection">
-                            <IconButton
-                              variant="text"
-                              color="red"
-                              onClick={() => openDeleteDialog(collection)}
+                              {collection.collectionName}
+                            </Typography>
+                            <Typography className="text-xs font-normal text-blue-gray-400">
+                              ID: {collection.id?.slice(-8)}
+                            </Typography>
+                          </td>
+
+                          {/* Description */}
+                          <td className={className}>
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal truncate max-w-xs"
                             >
-                              <TrashIcon className="h-5 w-5" />
-                            </IconButton>
-                          </Tooltip>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                              {collection.description || "No description"}
+                            </Typography>
+                          </td>
+
+                          {/* Scenes count */}
+                          <td className={className}>
+                            <Chip
+                              variant="ghost"
+                              color="light-blue"
+                              value={`${collection.sceneCount || 0} scenes`}
+                              className="w-fit text-xs"
+                            />
+                          </td>
+
+                          {/* Actions */}
+                          <td className={className}>
+                            <div className="flex items-center gap-1">
+                              <Tooltip content="View Details">
+                                <IconButton
+                                  variant="text"
+                                  color="light-blue"
+                                  onClick={() => openDetail(collection)}
+                                >
+                                  <EyeIcon className="h-5 w-5" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip content="Edit Collection">
+                                <IconButton
+                                  variant="text"
+                                  color="blue-gray"
+                                  onClick={() => navigate(`/dashboard/edit-collection/${collection.id}`)}
+                                >
+                                  <PencilIcon className="h-5 w-5" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip content="Delete Collection">
+                                <IconButton
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => openDeleteDialog(collection)}
+                                >
+                                  <TrashIcon className="h-5 w-5" />
+                                </IconButton>
+                              </Tooltip>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardBody>
       </Card>
