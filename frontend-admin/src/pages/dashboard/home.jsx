@@ -10,6 +10,7 @@ import {
   PhotoIcon,
 } from "@heroicons/react/24/solid";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export function Home() {
   const navigate = useNavigate();
@@ -22,9 +23,13 @@ export function Home() {
 
     const fetchStats = async () => {
       try {
-        const response = await fetch("http://localhost:3000/admin/dashboard/stats");
-        const json = await response.json();
-        if (json.success) setStats(json.data);
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+        const adminUrl = baseUrl.replace(/\/api$/, "");
+        
+        const response = await axios.get(`${adminUrl}/admin/dashboard/stats`);
+        if (response.data?.success) {
+          setStats(response.data.data);
+        }
       } catch (error) {
         console.error("Failed to fetch dashboard stats", error);
       } finally {
