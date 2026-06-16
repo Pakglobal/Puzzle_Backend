@@ -16,7 +16,6 @@ export function Home() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ users: 0, collections: 0, scenes: 0, notifications: 0 });
   const [loading, setLoading] = useState(true);
-  const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
 
@@ -25,7 +24,7 @@ export function Home() {
       try {
         const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
         const adminUrl = baseUrl.replace(/\/api$/, "");
-        
+
         const response = await axios.get(`${adminUrl}/admin/dashboard/stats`);
         if (response.data?.success) {
           setStats(response.data.data);
@@ -55,9 +54,9 @@ export function Home() {
       label: "Puzzle Scenes",
       value: stats.scenes,
       description: "Scenes ready for players",
-      gradient: "from-violet-500 to-purple-400",
-      bg: "bg-violet-50",
-      text: "text-violet-600",
+      gradient: "from-green-500 to-teal-400",
+      bg: "bg-green-50",
+      text: "text-green-600",
       action: () => navigate("/dashboard/scenes"),
     },
     {

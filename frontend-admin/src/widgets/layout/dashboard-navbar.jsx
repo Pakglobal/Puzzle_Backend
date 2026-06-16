@@ -1,24 +1,14 @@
-import { useLocation,  useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
   Navbar,
   Typography,
-  Button,
-  IconButton,
   Breadcrumbs,
+  IconButton,
   Input,
-  Menu,
-  MenuHandler,
-  MenuList,
-  MenuItem,
-  Avatar,
 } from "@material-tailwind/react";
 import {
   UserCircleIcon,
-  BellIcon,
-  ClockIcon,
-  CreditCardIcon,
   Bars3Icon,
-  ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/solid";
 import {
   useMaterialTailwindController,
@@ -31,13 +21,7 @@ export function DashboardNavbar() {
   const { fixedNavbar, openSidenav } = controller;
   const { pathname } = useLocation();
   const [layout, page] = pathname.split("/").filter((el) => el !== "");
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/auth/sign-in");
-  };
+  const { user } = useAuth();
 
   return (
     <Navbar
@@ -55,7 +39,7 @@ export function DashboardNavbar() {
             className={`bg-transparent p-0 transition-all ${fixedNavbar ? "mt-1" : ""
               }`}
           >
-          
+
           </Breadcrumbs>
           <Typography variant="h6" color="blue-gray">
             {page}
@@ -83,16 +67,6 @@ export function DashboardNavbar() {
               {user?.role || "Admin"}
             </Typography>
           </div>
-          <Button
-            variant="text"
-            color="blue-gray"
-            className="hidden items-center gap-1 px-4 xl:flex normal-case"
-            onClick={handleLogout}
-          >
-            <ArrowRightOnRectangleIcon className="h-5 w-5 text-blue-gray-500" />
-            Logout
-          </Button>
-         
         </div>
       </div>
     </Navbar>

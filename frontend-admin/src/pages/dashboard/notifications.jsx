@@ -54,6 +54,7 @@ export function Notifications() {
           variant="gradient"
           color="blue"
           className="mb-8 p-6"
+          style={{ background: "linear-gradient(135deg, rgb(14, 165, 233) 0%, rgb(99, 102, 241) 60%, rgb(139, 92, 246) 100%)" }}
         >
           <Typography variant="h6" color="white">
             Send Push Notification
@@ -96,10 +97,10 @@ export function Notifications() {
                 }}
               />
             </div>
-            <Button 
-              type="submit" 
-              color="blue" 
-              fullWidth 
+            <Button
+              type="submit"
+              color="blue"
+              fullWidth
               className="mt-4"
               disabled={loading}
             >

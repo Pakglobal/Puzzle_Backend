@@ -117,6 +117,9 @@ export function Scenes() {
                     variant="gradient"
                     color="light-blue"
                     className="mb-8 p-6 flex items-center justify-between"
+                    style={{
+                        background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 60%, #8b5cf6 100%)",
+                    }}
                 >
                     <div className="flex items-center gap-3">
                         <Typography variant="h6" color="white">
@@ -167,32 +170,27 @@ export function Scenes() {
                             </Typography>
                         </div>
                     ) : (
-                        <table className="w-full min-w-[800px] table-auto">
-                            <thead>
-                                <tr>
-                                    {["preview", "scene name", "dimensions", "levels", "objects", "actions"].map(
-                                        (el) => (
-                                            <th
-                                                key={el}
-                                                className="border-b border-blue-gray-50 py-3 px-5 text-left bg-white"
-                                            >
-                                                <Typography
-                                                    variant="small"
-                                                    className="text-[11px] font-bold uppercase text-blue-gray-400"
-                                                >
-                                                    {el}
-                                                </Typography>
-                                            </th>
-                                        )
-                                    )}
-                                </tr>
-                            </thead>
-                        </table>
-                    )}
-                    {/* scrollable rows only */}
-                    {!loading && scenes.length > 0 && (
                         <div style={{ overflowY: "auto", maxHeight: "calc(100vh - 370px)" }}>
                             <table className="w-full min-w-[800px] table-auto">
+                                <thead className="sticky top-0 z-10 bg-white">
+                                    <tr>
+                                        {["preview", "scene name", "dimensions", "levels", "objects", "actions"].map(
+                                            (el) => (
+                                                <th
+                                                    key={el}
+                                                    className="border-b border-blue-gray-50 py-3 px-5 text-left bg-white shadow-sm"
+                                                >
+                                                    <Typography
+                                                        variant="small"
+                                                        className="text-[11px] font-bold uppercase text-blue-gray-400"
+                                                    >
+                                                        {el}
+                                                    </Typography>
+                                                </th>
+                                            )
+                                        )}
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     {paginatedScenes.map((scene, key) => {
                                         const className = `py-3 px-5 ${key === paginatedScenes.length - 1

@@ -112,6 +112,9 @@ export function EditCollection() {
                             variant="gradient"
                             color="light-blue"
                             className="p-5 flex items-center gap-3"
+                            style={{
+                                background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 60%, #8b5cf6 100%)",
+                            }}
                         >
                             <FolderIcon className="h-6 w-6 text-white" />
                             <Typography variant="h6" color="white">
@@ -166,6 +169,9 @@ export function EditCollection() {
                             color="light-blue"
                             className="flex items-center gap-2"
                             disabled={loading}
+                            style={{
+                                background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 60%, #8b5cf6 100%)",
+                            }}
                         >
                             {loading ? "Updating..." : (
                                 <>
